@@ -1,3 +1,5 @@
+import { asset } from "../lib/asset";
+
 export type Focus = { x: number; y: number };
 
 export interface ProjectImage {
@@ -93,7 +95,7 @@ export const site: SiteConfig = {
 	practiceLine: "A Lisbon practice shaping light, weight and quiet proportion.",
 	practiceFacts: ["FOUNDED 2018", "FOUR ARCHITECTS", "OA Nº 27 481"],
 	studioImage: {
-		src: "/images/studio/portrait.svg",
+		src: asset("/images/studio/portrait.svg"),
 		alt: "Studio interior with drawing tables, material samples and a pinned-up facade study",
 		caption: "Studio — Lisbon",
 		focus: { x: 0.54, y: 0.3 },
@@ -166,7 +168,7 @@ const DIMS = {
 };
 
 function fileOf(project: string, kind: "plan" | "elevation" | "view" | "opener", i: number) {
-	return `/images/${project}/${kind}-${String(i).padStart(2, "0")}.svg`;
+	return asset(`/images/${project}/${kind}-${String(i).padStart(2, "0")}.svg`);
 }
 
 function buildImages(
@@ -246,7 +248,7 @@ export const projects: Project[] = [
 			category("project-01", "03", "views", "3D Views", "16/9", "VIEW", 5, "AXON"),
 		],
 		model: {
-			src: "/models/project-01.glb",
+			src: asset("/models/project-01.glb"),
 			fileLabel: "CASA-LITORAL-MASSING.GLB",
 			software: "RHINO + GRASSHOPPER",
 			year: "2024",
@@ -276,7 +278,7 @@ export const projects: Project[] = [
 			category("project-02", "03", "views", "3D Views", "16/9", "VIEW", 4, "AXON"),
 		],
 		model: {
-			src: "/models/project-02.glb",
+			src: asset("/models/project-02.glb"),
 			fileLabel: "ATELIER-NORTE-MASSING.GLB",
 			software: "REVIT",
 			year: "2023",
@@ -305,7 +307,7 @@ export const projects: Project[] = [
 			category("project-03", "03", "views", "3D Views", "16/9", "VIEW", 6, "AXON"),
 		],
 		model: {
-			src: "/models/project-03.glb",
+			src: asset("/models/project-03.glb"),
 			fileLabel: "PAVILHAO-RIO-MASSING.GLB",
 			software: "RHINO + GRASSHOPPER",
 			year: "2022",
