@@ -1,0 +1,15 @@
+.practice-statement {
+	padding: var(--space-9) 0;
+}
+
+.practice-statement__text {
+	max-width: 20ch;
+	margin: var(--space-6) auto var(--space-6) 0;
+	text-wrap: balance;
+}
+
+@media (min-width: 1024px) {
+	.practice-statement__text {
+		margin-left: 12%;
+	}
+}

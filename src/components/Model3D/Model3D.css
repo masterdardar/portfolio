@@ -1,0 +1,105 @@
+.model-3d {
+	position: relative;
+	min-height: 100vh;
+	min-height: 100svh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding: var(--space-6) 0;
+	border-top: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+}
+
+.model-3d__head {
+	margin-bottom: var(--space-4);
+}
+
+.model-3d__canvas {
+	position: relative;
+	height: 70vh;
+	height: 70svh;
+	border-top: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+}
+
+.model-3d__canvas canvas {
+	touch-action: pan-y;
+}
+
+.model-3d__loader {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+}
+
+.model-3d__loader-line {
+	display: block;
+	width: 160px;
+	height: 1px;
+	background: var(--fg);
+	transform-origin: left center;
+	animation: model-loader 1.5s var(--ease) infinite;
+}
+
+@keyframes model-loader {
+	0% {
+		transform: scaleX(0);
+		transform-origin: left center;
+	}
+	50% {
+		transform: scaleX(1);
+		transform-origin: left center;
+	}
+	51% {
+		transform-origin: right center;
+	}
+	100% {
+		transform: scaleX(0);
+		transform-origin: right center;
+	}
+}
+
+.model-3d__progress {
+	position: fixed;
+	right: var(--space-4);
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 90;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 400ms var(--ease),
+		visibility 400ms var(--ease);
+}
+
+.model-3d__progress.is-visible {
+	opacity: 1;
+	visibility: visible;
+}
+
+.model-3d__track {
+	display: block;
+	width: 1px;
+	height: 200px;
+	background: var(--line);
+}
+
+.model-3d__fill {
+	display: block;
+	width: 1px;
+	height: calc(200px * var(--p, 0));
+	background: var(--fg);
+}
+
+.model-3d__caption {
+	display: block;
+	text-align: center;
+	margin-top: var(--space-3);
+}

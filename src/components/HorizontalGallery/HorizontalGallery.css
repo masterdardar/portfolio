@@ -1,0 +1,148 @@
+.h-gallery {
+	position: relative;
+}
+
+.h-gallery__track {
+	display: flex;
+	width: 100%;
+	height: 100vh;
+	height: 100svh;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	background: var(--bg);
+	border-top: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+}
+
+.h-gallery__track::-webkit-scrollbar {
+	display: none;
+}
+
+.h-gallery__slide {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	flex-shrink: 0;
+	scroll-snap-align: start;
+	background: var(--bg);
+}
+
+.h-gallery__caption {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 6;
+	padding: var(--space-2) var(--space-4) calc(var(--space-2) + 56px);
+	border-top: 1px solid var(--line);
+	background: rgba(250, 250, 250, 0.9);
+}
+
+/* Reel navigation — fixed to viewport bottom while parent in view */
+.reel {
+	position: fixed;
+	left: 50%;
+	bottom: var(--space-3);
+	transform: translateX(-50%);
+	z-index: 90;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 400ms var(--ease),
+		visibility 400ms var(--ease);
+}
+
+.reel.is-visible {
+	opacity: 1;
+	visibility: visible;
+}
+
+.reel__label {
+	background: var(--bg);
+	padding: 2px 8px;
+	border: 1px solid var(--line);
+	opacity: 0;
+	transition: opacity 400ms var(--ease);
+}
+
+.reel.is-expanded .reel__label {
+	opacity: 1;
+}
+
+.reel__items {
+	display: flex;
+	align-items: flex-end;
+	gap: 12px;
+	padding: 12px 16px;
+}
+
+.reel__item {
+	background: none;
+	border: none;
+	padding: 0;
+	display: flex;
+	align-items: flex-end;
+}
+
+.reel__line {
+	display: block;
+	width: 1px;
+	height: 40px;
+	background: var(--line-strong);
+	transition:
+		height 400ms var(--ease),
+		background 400ms var(--ease);
+}
+
+.reel__item.is-active .reel__line {
+	height: 48px;
+	background: var(--fg);
+}
+
+.reel__thumb {
+	display: none;
+	width: 80px;
+	height: 60px;
+	object-fit: cover;
+	border: 1px solid var(--line);
+	opacity: 0.6;
+	transition:
+		opacity 400ms var(--ease),
+		border-color 400ms var(--ease);
+}
+
+.reel.is-expanded .reel__thumb {
+	display: block;
+}
+
+.reel.is-expanded .reel__line {
+	display: none;
+}
+
+.reel.is-expanded .reel__items {
+	gap: 8px;
+	background: var(--bg);
+	border: 1px solid var(--line);
+}
+
+.reel.is-expanded .reel__item.is-active .reel__thumb {
+	border-color: var(--fg);
+	opacity: 1;
+}
+
+.reel__item:hover .reel__thumb {
+	opacity: 1;
+}
+
+@media (max-width: 767px) {
+	.h-gallery__caption {
+		padding-bottom: calc(var(--space-2) + 48px);
+	}
+}

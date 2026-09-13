@@ -1,0 +1,29 @@
+.skills {
+	padding: var(--space-6) 0 var(--space-8);
+}
+
+.skills__group + .skills__group {
+	margin-top: var(--space-4);
+}
+
+.skills__head {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-3);
+	margin-bottom: var(--space-2);
+}
+
+.skills__rule {
+	flex: 1;
+	height: 1px;
+	background: var(--line);
+	transform: translateY(-2px);
+}
+
+.skills__tags {
+	line-height: 2.2;
+}
+
+.skills__sep {
+	color: var(--line-strong);
+}

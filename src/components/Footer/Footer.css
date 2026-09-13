@@ -1,0 +1,29 @@
+.footer {
+	padding: var(--space-5) 0;
+}
+
+.footer__rule {
+	margin-bottom: var(--space-4);
+}
+
+.footer .footer__inner {
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+.footer__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	flex-wrap: wrap;
+}
+
+.footer__right a {
+	text-decoration: none;
+	color: inherit;
+}
+
+.footer__sep {
+	color: var(--line-strong);
+}

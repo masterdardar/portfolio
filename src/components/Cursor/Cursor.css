@@ -1,0 +1,44 @@
+.cursor {
+	position: fixed;
+	top: -6px;
+	left: -6px;
+	width: 12px;
+	height: 12px;
+	border: 1px solid var(--fg);
+	border-radius: 50%;
+	background: transparent;
+	pointer-events: none;
+	z-index: 999;
+	opacity: 0;
+	transition:
+		opacity 300ms var(--ease),
+		width 300ms var(--ease),
+		height 300ms var(--ease),
+		top 300ms var(--ease),
+		left 300ms var(--ease),
+		border-color 300ms var(--ease);
+}
+
+.cursor.is-visible {
+	opacity: 1;
+}
+
+.cursor.is-hover {
+	width: 18px;
+	height: 18px;
+	top: -9px;
+	left: -9px;
+	border-color: var(--accent);
+}
+
+@media (hover: none), (pointer: coarse) {
+	.cursor {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.cursor {
+		display: none;
+	}
+}

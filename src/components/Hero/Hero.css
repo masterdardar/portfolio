@@ -1,0 +1,139 @@
+.hero {
+	position: relative;
+	min-height: 100vh;
+	min-height: 100svh;
+	display: flex;
+	align-items: flex-end;
+	overflow: hidden;
+}
+
+.hero__grid-lines {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.hero__hline {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: var(--line);
+}
+
+.hero__vline {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background: var(--line);
+}
+
+.hero__cross {
+	position: absolute;
+	transform: translate(-50%, -50%);
+	font-size: 10px;
+	font-weight: 300;
+	color: var(--line-strong);
+	line-height: 1;
+}
+
+.hero__rail {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background: var(--line);
+}
+
+.hero__rail--left {
+	left: max(var(--space-4), calc((100vw - var(--max-width)) / 2 + var(--space-4)));
+}
+
+.hero__rail--right {
+	right: max(var(--space-4), calc((100vw - var(--max-width)) / 2 + var(--space-4)));
+}
+
+.hero__inner {
+	position: relative;
+	width: 100%;
+	padding-bottom: var(--space-5);
+}
+
+.hero__kicker {
+	margin-bottom: var(--space-3);
+}
+
+.hero__name {
+	font-size: clamp(3rem, 11.5vw, 11.5rem);
+	text-wrap: balance;
+}
+
+.hero__annotation {
+	margin-top: var(--space-3);
+}
+
+.hero__rule {
+	margin: var(--space-4) 0;
+}
+
+.hero__meta {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--space-3);
+}
+
+.hero__meta-sep {
+	width: 1px;
+	align-self: stretch;
+	background: var(--line);
+}
+
+.hero__scroll {
+	position: absolute;
+	right: var(--space-4);
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.hero__scroll-label {
+	writing-mode: vertical-rl;
+}
+
+.hero__scroll-line {
+	width: 1px;
+	height: 64px;
+	background: var(--line-strong);
+	transform-origin: top center;
+	animation: hero-scroll 2s ease-in-out infinite;
+}
+
+@keyframes hero-scroll {
+	0%,
+	100% {
+		transform: scaleY(0.25);
+		opacity: 0.4;
+	}
+	50% {
+		transform: scaleY(1);
+		opacity: 1;
+	}
+}
+
+@media (max-width: 767px) {
+	.hero__rail {
+		display: none;
+	}
+	.hero__meta {
+		justify-content: flex-start;
+		flex-wrap: wrap;
+	}
+	.hero__scroll {
+		display: none;
+	}
+}
