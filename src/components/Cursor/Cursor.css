@@ -4,8 +4,7 @@
 	left: -6px;
 	width: 12px;
 	height: 12px;
-	border: 1px solid var(--fg);
-	border-radius: 50%;
+	border: 1px solid var(--ink);
 	background: transparent;
 	pointer-events: none;
 	z-index: 999;
@@ -28,7 +27,7 @@
 	height: 18px;
 	top: -9px;
 	left: -9px;
-	border-color: var(--accent);
+	border-color: var(--clay);
 }
 
 @media (hover: none), (pointer: coarse) {

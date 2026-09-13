@@ -130,19 +130,23 @@ function portraitDrawing(rand, w, h) {
 	return s;
 }
 
-function svgDoc({ w, h, title, sub, seed, kind }) {
+function svgDoc({ w, h, title, sub, seed, kind, bare = false }) {
 	const rand = mulberry(seed);
 	const drawing = kind === "plan" ? planDrawing(rand, w, h) : kind === "elevation" ? elevationDrawing(rand, w, h) : kind === "portrait" ? portraitDrawing(rand, w, h) : viewDrawing(rand, w, h);
+	const label = bare
+		? ""
+		: `<text x="48" y="${h - 96}" font-family="monospace" font-size="26" letter-spacing="4" fill="#0a0a0a">${title}</text>
+<text x="48" y="${h - 60}" font-family="monospace" font-size="20" letter-spacing="3" fill="#8a8a8a">${sub}</text>`;
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
 <rect width="${w}" height="${h}" fill="#fafafa"/>
 <g stroke="rgba(10,10,10,0.08)" stroke-width="1">${gridLines(w, h, 48)}</g>
 <rect x="24" y="24" width="${w - 48}" height="${h - 48}" fill="none" stroke="rgba(10,10,10,0.2)" stroke-width="1"/>
 ${drawing}
-<text x="48" y="${h - 96}" font-family="monospace" font-size="26" letter-spacing="4" fill="#0a0a0a">${title}</text>
-<text x="48" y="${h - 60}" font-family="monospace" font-size="20" letter-spacing="3" fill="#8a8a8a">${sub}</text>
+${label}
 </svg>`;
 }
 
+const TITLES = { "project-01": "CASA LITORAL", "project-02": "ATELIER NORTE", "project-03": "PAVILHAO RIO" };
 const jobs = [];
 const planCount = { "project-01": 6, "project-02": 4, "project-03": 4 };
 const elevCount = { "project-01": 5, "project-02": 5, "project-03": 4 };
@@ -150,12 +154,14 @@ const viewCount = { "project-01": 5, "project-02": 4, "project-03": 6 };
 
 for (const p of ["project-01", "project-02", "project-03"]) {
 	const n = Number(p.slice(-2));
+	const name = TITLES[p];
 	for (let i = 1; i <= planCount[p]; i++)
-		jobs.push([`${p}/plan-${String(i).padStart(2, "0")}.svg`, 1600, 1200, `PLAN ${String(i).padStart(2, "0")} — 1:100`, `PROJECT ${String(n).padStart(2, "0")} — PLACEHOLDER`, n * 100 + i, "plan"]);
+		jobs.push([`${p}/plan-${String(i).padStart(2, "0")}.svg`, 1200, 1500, `PLAN ${String(i).padStart(2, "0")} — 1:100`, `${name} — PLACEHOLDER`, n * 100 + i, "plan"]);
 	for (let i = 1; i <= elevCount[p]; i++)
-		jobs.push([`${p}/elevation-${String(i).padStart(2, "0")}.svg`, 1600, 1200, `ELEVATION ${String(i).padStart(2, "0")} — 1:100`, `PROJECT ${String(n).padStart(2, "0")} — PLACEHOLDER`, n * 200 + i, "elevation"]);
+		jobs.push([`${p}/elevation-${String(i).padStart(2, "0")}.svg`, 1800, 1200, `ELEVATION ${String(i).padStart(2, "0")} — 1:100`, `${name} — PLACEHOLDER`, n * 200 + i, "elevation"]);
 	for (let i = 1; i <= viewCount[p]; i++)
-		jobs.push([`${p}/view-${String(i).padStart(2, "0")}.svg`, 1600, 1200, `VIEW ${String(i).padStart(2, "0")} — AXON`, `PROJECT ${String(n).padStart(2, "0")} — PLACEHOLDER`, n * 300 + i, "view"]);
+		jobs.push([`${p}/view-${String(i).padStart(2, "0")}.svg`, 1920, 1080, `VIEW ${String(i).padStart(2, "0")} — AXON`, `${name} — PLACEHOLDER`, n * 300 + i, "view"]);
+	jobs.push([`${p}/opener-01.svg`, 1750, 1190, `${name}`, "OVERVIEW — PLACEHOLDER", n * 400 + 1, "view"]);
 }
 jobs.push(["studio/portrait.svg", 1200, 1500, "STUDIO — LISBON", "PRINCIPAL ARCHITECT", 999, "portrait"]);
 
@@ -164,6 +170,13 @@ for (const [rel, w, h, title, sub, seed, kind] of jobs) {
 	mkdirSync(dirname(out), { recursive: true });
 	writeFileSync(out, svgDoc({ w, h, title, sub, seed, kind }));
 	console.log("wrote", rel);
+}
+
+// Hero corner artwork — bare axonometric linework, no labels
+{
+	const out = join(pub, "images", "hero-axon.svg");
+	writeFileSync(out, svgDoc({ w: 1400, h: 1000, title: "", sub: "", seed: 7, kind: "view", bare: true }));
+	console.log("wrote images/hero-axon.svg");
 }
 
 /* ---- Minimal GLB (single box, distinct color per project) ---- */

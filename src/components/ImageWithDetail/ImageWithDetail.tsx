@@ -1,97 +1,194 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import type { ProjectImage } from "../../data/projects";
+import { platePanel } from "../../lib/plateGeometry";
+import Ticks from "../Ticks/Ticks";
 
 type Props = {
 	image: ProjectImage;
+	panelW: number; // panel width as % of the image box
+	zoom: number; // crop magnification
+	fluid?: boolean; // natural image height (masonry, studio)
+	fit?: "cover" | "contain"; // used when not fluid
 	className?: string;
 };
 
+export function PoiButton({
+	x,
+	y,
+	label,
+	open,
+	onOpen,
+	onClose,
+	onToggle,
+	coarse,
+}: {
+	x: number;
+	y: number;
+	label: string;
+	open: boolean;
+	onOpen: () => void;
+	onClose: () => void;
+	onToggle: () => void;
+	coarse: boolean;
+}) {
+	return (
+		<button
+			type="button"
+			className={`poi${open ? " on" : ""}`}
+			style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+			aria-label={`View detail — ${label}`}
+			aria-expanded={open}
+			onClick={(e) => {
+				e.stopPropagation();
+				if (coarse) onToggle();
+			}}
+			onFocus={coarse ? undefined : onOpen}
+			onBlur={coarse ? undefined : onClose}
+		>
+			<svg viewBox="0 0 64 64" aria-hidden="true">
+				<g className="dash-spin">
+					<circle
+						cx="32"
+						cy="32"
+						r="30"
+						fill="none"
+						stroke="rgba(10,10,10,0.4)"
+						strokeWidth="1"
+						strokeDasharray="3 5"
+					/>
+				</g>
+				<line x1="25" y1="32" x2="39" y2="32" stroke="rgba(10,10,10,0.4)" strokeWidth="1" />
+				<line x1="32" y1="25" x2="32" y2="39" stroke="rgba(10,10,10,0.4)" strokeWidth="1" />
+				<circle cx="32" cy="32" r="1.4" fill="rgba(10,10,10,0.65)" />
+			</svg>
+		</button>
+	);
+}
+
 /**
- * Every portfolio image. A dashed spinning indicator sits at the
- * focus point; hovering (desktop) reveals a 3x zoomed blowup panel,
- * tapping (mobile) toggles it as a full-width panel below the image.
+ * Plate interaction (SPEC-2 §2.7) — dashed indicator + blowup floating near
+ * the indicator on fine pointers, expanding below the image on coarse ones.
  */
-function ImageWithDetail({ image, className = "" }: Props) {
+function ImageWithDetail({ image, panelW, zoom, fluid = false, fit = "cover", className = "" }: Props) {
 	const [open, setOpen] = useState(false);
-	const [isMobile, setIsMobile] = useState(false);
-	const closeTimer = useRef<number | null>(null);
+	const [coarse, setCoarse] = useState(
+		() => typeof window !== "undefined" && window.matchMedia("(hover: none)").matches,
+	);
 
 	useEffect(() => {
-		const mq = window.matchMedia("(max-width: 767px)");
-		const sync = () => setIsMobile(mq.matches);
-		sync();
+		const mq = window.matchMedia("(hover: none)");
+		const sync = () => {
+			setCoarse(mq.matches);
+			if (mq.matches) setOpen(false);
+		};
 		mq.addEventListener("change", sync);
 		return () => mq.removeEventListener("change", sync);
 	}, []);
 
-	useEffect(() => {
-		return () => {
-			if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-		};
-	}, []);
+	const geom = platePanel(image.focus, panelW);
+	const aspect = `${image.width} / ${image.height}`;
+	const openIt = () => setOpen(true);
+	const closeIt = () => setOpen(false);
+	const toggle = () => setOpen((v) => !v);
 
-	const show = () => {
-		if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
-		setOpen(true);
-	};
-	const hide = () => {
-		closeTimer.current = window.setTimeout(() => setOpen(false), 120);
-	};
-
-	const flip = image.focusX > 0.62 ? "is-left" : "is-right";
+	const caption = (
+		<span className="blow-cap">
+			<span className="micro blow-cap__label">{image.detailLabel}</span>
+			<span className="blow-cap__rule" aria-hidden="true" />
+			<span className="micro blow-cap__scale">{image.detailScale}</span>
+		</span>
+	);
 
 	return (
-		<div className={`img-detail ${className}`}>
-			<img src={image.src} alt={image.caption} loading="lazy" />
-			<button
-				type="button"
-				className="img-detail__indicator"
-				style={{ left: `${image.focusX * 100}%`, top: `${image.focusY * 100}%` }}
-				aria-label={`View detail — ${image.detailLabel}`}
-				aria-expanded={open}
-				onMouseEnter={isMobile ? undefined : show}
-				onMouseLeave={isMobile ? undefined : hide}
-				onFocus={isMobile ? undefined : show}
-				onBlur={isMobile ? undefined : hide}
-				onClick={() => {
-					if (isMobile) setOpen((v) => !v);
-				}}
-			>
-				<span className="img-detail__dot" aria-hidden="true" />
-			</button>
-			{!isMobile && (
-				<div
-					className={`img-detail__blowup ticks ${flip}${open ? " is-open" : ""}`}
-					style={{ left: `${image.focusX * 100}%`, top: `${image.focusY * 100}%` }}
-					aria-hidden={!open}
-					onMouseEnter={show}
-					onMouseLeave={hide}
-				>
-					<span className="img-detail__connector" aria-hidden="true" />
+		<div
+			className={`plate${open ? " is-open" : ""} ${className}`}
+			onPointerEnter={coarse ? undefined : openIt}
+			onPointerLeave={coarse ? undefined : closeIt}
+		>
+			<div className={`plate__media${fluid ? " is-fluid" : ""}`}>
+				<img
+					src={image.src}
+					alt={image.alt}
+					width={image.width}
+					height={image.height}
+					loading="lazy"
+					draggable={false}
+					style={fluid ? undefined : ({ "--plate-fit": fit } as CSSProperties)}
+				/>
+				<PoiButton
+					x={image.focus.x}
+					y={image.focus.y}
+					label={image.detailLabel}
+					open={open}
+					onOpen={openIt}
+					onClose={closeIt}
+					onToggle={toggle}
+					coarse={coarse}
+				/>
+				{!coarse && (
 					<div
-						className="img-detail__blowup-image"
-						style={{
-							backgroundImage: `url("${image.src}")`,
-							backgroundPosition: `${image.focusX * 100}% ${image.focusY * 100}%`,
-						}}
-						role="img"
-						aria-label={image.detailLabel}
-					/>
-					<span className="micro">{image.detailLabel}</span>
-				</div>
-			)}
-			{isMobile && open && (
-				<div className="img-detail__panel">
-					<div
-						className="img-detail__panel-image"
-						style={{
-							backgroundImage: `url("${image.src}")`,
-							backgroundPosition: `${image.focusX * 100}% ${image.focusY * 100}%`,
-						}}
-						role="img"
-						aria-label={image.detailLabel}
-					/>
-					<span className="micro">{image.detailLabel}</span>
+						className={`blow${open ? " is-open" : ""}`}
+						style={
+							{
+								left: `${geom.left}%`,
+								top: `${geom.top}%`,
+								width: `${panelW}%`,
+								aspectRatio: aspect,
+								transformOrigin: geom.origin,
+							} as CSSProperties
+						}
+						aria-hidden={!open}
+					>
+						{geom.captionAbove && caption}
+						<div className="blow-cropbox">
+							<Ticks size={8} inset={4} />
+							<span className="blow-cross" aria-hidden="true" />
+							{open && (
+								<div
+									className="blow-crop"
+									style={
+										{
+											backgroundImage: `url("${image.src}")`,
+											"--zoom": zoom,
+											"--px": image.focus.x,
+											"--py": image.focus.y,
+										} as CSSProperties
+									}
+									role="img"
+									aria-label={`${image.detailLabel} — magnified detail`}
+								/>
+							)}
+						</div>
+						{!geom.captionAbove && caption}
+					</div>
+				)}
+			</div>
+			{coarse && (
+				<div className={`plate__drawer${open ? " is-open" : ""}`}>
+					<div className="plate__drawer-in">
+						<div className="plate__drawer-body">
+							<div
+								className="plate__drawer-crop"
+								style={
+									{
+										backgroundImage: `url("${image.src}")`,
+										aspectRatio: aspect,
+										"--zoom": zoom,
+										"--px": image.focus.x,
+										"--py": image.focus.y,
+									} as CSSProperties
+								}
+								role="img"
+								aria-label={`${image.detailLabel} — magnified detail`}
+							/>
+							<span className="blow-cap blow-cap--drawer">
+								<span className="micro blow-cap__label">{image.detailLabel}</span>
+								<span className="blow-cap__rule" aria-hidden="true" />
+								<span className="micro blow-cap__scale">{image.detailScale}</span>
+							</span>
+						</div>
+					</div>
 				</div>
 			)}
 		</div>

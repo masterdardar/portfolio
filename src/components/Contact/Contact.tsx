@@ -1,36 +1,47 @@
 import useInView from "../../hooks/useInView";
-import Annotation from "../Annotation/Annotation";
-
-const SOCIALS = [
-	{ label: "LinkedIn", href: "https://www.linkedin.com/" },
-	{ label: "Instagram", href: "https://www.instagram.com/" },
-	{ label: "Behance", href: "https://www.behance.net/" },
-];
+import { site } from "../../data/projects";
 
 function Contact() {
-	const { ref, inView } = useInView<HTMLElement>(0.3);
+	const { ref, inView } = useInView<HTMLElement>(0.25);
+	const blocks = [
+		{ label: "STUDIO", lines: site.address, hrefs: [] as string[] },
+		{ label: "TELEPHONE", lines: [site.phone], hrefs: [`tel:${site.phone.replace(/\s/g, "")}`] },
+		{ label: "ELSEWHERE", lines: site.socials.map((s) => s.label), hrefs: site.socials.map((s) => s.href) },
+	];
 	return (
-		<section ref={ref} className={`contact reveal${inView ? " is-visible" : ""}`} id="contact" aria-label="Contact">
+		<section ref={ref} className="contact" id="contact" aria-label="Contact">
 			<div className="container">
-				<hr className="rule" />
-				<p className="micro contact__kicker">CONTACT</p>
-				<a href="mailto:studio@escoto.archi" className="contact__email">
-					studio@escoto.archi
+				<a href={`mailto:${site.email}`} className="contact__email">
+					{site.email}
 				</a>
-				<div className="contact__annotation">
-					<Annotation direction="horizontal" length="long" label="AVAILABLE FOR COMMISSIONS" />
-				</div>
-				<p className="micro contact__address">Rua das Flores 84 — Lisbon · +351 21 342 0000</p>
-				<nav className="contact__socials" aria-label="Social links">
-					{SOCIALS.map((s, i) => (
-						<span key={s.label} className="contact__social-item">
-							{i > 0 && <span className="contact__sep" aria-hidden="true" />}
-							<a href={s.href} target="_blank" rel="noreferrer" className="u-link micro">
-								{s.label}
-							</a>
-						</span>
+				<div className="grid12 contact__grid">
+					{blocks.map((b, i) => (
+						<div
+							key={b.label}
+							className={`contact__block rv${inView ? " in" : ""}`}
+							style={{ transitionDelay: `${i * 60}ms` }}
+						>
+							<p className="micro contact__label">{b.label}</p>
+							{b.lines.map((line, j) =>
+								b.hrefs[j] ? (
+									<a
+										key={line}
+										href={b.hrefs[j]}
+										className="u-link contact__line"
+										target={b.hrefs[j].startsWith("http") ? "_blank" : undefined}
+										rel={b.hrefs[j].startsWith("http") ? "noreferrer" : undefined}
+									>
+										{line}
+									</a>
+								) : (
+									<p key={line} className="contact__line">
+										{line}
+									</p>
+								),
+							)}
+						</div>
 					))}
-				</nav>
+				</div>
 			</div>
 		</section>
 	);

@@ -1,29 +1,28 @@
+import { site } from "../../data/projects";
+
 function Footer() {
-	const year = new Date().getFullYear();
+	const links = [
+		{ label: "EMAIL", href: `mailto:${site.email}` },
+		...site.socials.map((s) => ({ label: s.label.toUpperCase(), href: s.href })),
+		{ label: "TOP", href: "#top" },
+	];
 	return (
 		<footer className="footer">
-			<div className="container footer__inner">
-				<hr className="rule footer__rule" />
-				<div className="footer__row">
-					<span className="micro">Jonah Darryl Escoto — {year}</span>
-					<span className="micro footer__right">
-						<a href="mailto:studio@escoto.archi" className="u-link">
-							studio@escoto.archi
+			<div className="container footer__row">
+				<span className="micro">JONAH DARRYL ESCOTO © 2026</span>
+				<nav className="footer__links" aria-label="Footer">
+					{links.map((l) => (
+						<a
+							key={l.label}
+							href={l.href}
+							className="u-link micro footer__link"
+							target={l.href.startsWith("http") ? "_blank" : undefined}
+							rel={l.href.startsWith("http") ? "noreferrer" : undefined}
+						>
+							{l.label}
 						</a>
-						<span className="footer__sep" aria-hidden="true">
-							{" · "}
-						</span>
-						<a href="https://www.linkedin.com/" target="_blank" rel="noreferrer" className="u-link">
-							LinkedIn
-						</a>
-						<span className="footer__sep" aria-hidden="true">
-							{" · "}
-						</span>
-						<a href="https://www.instagram.com/" target="_blank" rel="noreferrer" className="u-link">
-							Instagram
-						</a>
-					</span>
-				</div>
+					))}
+				</nav>
 			</div>
 		</footer>
 	);

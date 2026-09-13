@@ -1,70 +1,167 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ProjectImage } from "../../data/projects";
+import type { Category } from "../../data/projects";
 import ImageWithDetail from "../ImageWithDetail/ImageWithDetail";
 import ReelNavigation from "./ReelNavigation";
 
-type Props = {
-	images: ProjectImage[];
-	label: string; // e.g. "PLAN"
-	id: string;
+const RATIO_VALUE: Record<Category["ratio"], number> = {
+	"4/5": 4 / 5,
+	"3/2": 3 / 2,
+	"16/9": 16 / 9,
+	"25/17": 25 / 17,
 };
 
-function HorizontalGallery({ images, label, id }: Props) {
-	const containerRef = useRef<HTMLDivElement>(null);
+type Props = {
+	category: Category;
+	projectTitle: string;
+	projectMeta: string;
+};
+
+function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
+	const sectionRef = useRef<HTMLElement>(null);
+	const trackRef = useRef<HTMLDivElement>(null);
 	const [active, setActive] = useState(0);
 	const [reelVisible, setReelVisible] = useState(false);
-	const sectionRef = useRef<HTMLElement>(null);
-	const timer = useRef<number | null>(null);
+	const drag = useRef<{ startX: number; startScroll: number; moved: boolean } | null>(null);
 
+	const count = category.images.length;
+
+	/* Active index from scroll position */
 	useEffect(() => {
-		const el = containerRef.current;
-		if (!el) return;
+		const track = trackRef.current;
+		if (!track) return;
+		let raf = 0;
+		const sync = () => {
+			raf = 0;
+			const i = Math.round(track.scrollLeft / track.clientWidth);
+			setActive(Math.max(0, Math.min(count - 1, i)));
+		};
 		const onScroll = () => {
-			if (timer.current !== null) window.clearTimeout(timer.current);
-			timer.current = window.setTimeout(() => {
-				const i = Math.round(el.scrollLeft / el.clientWidth);
-				setActive(Math.max(0, Math.min(images.length - 1, i)));
-			}, 50);
+			if (raf === 0) raf = requestAnimationFrame(sync);
 		};
-		el.addEventListener("scroll", onScroll, { passive: true });
+		track.addEventListener("scroll", onScroll, { passive: true });
 		return () => {
-			el.removeEventListener("scroll", onScroll);
-			if (timer.current !== null) window.clearTimeout(timer.current);
+			track.removeEventListener("scroll", onScroll);
+			if (raf !== 0) cancelAnimationFrame(raf);
 		};
-	}, [images.length]);
+	}, [count]);
 
+	/* Reel visible only while the section sits in the middle band */
 	useEffect(() => {
 		const section = sectionRef.current;
 		if (!section) return;
 		const obs = new IntersectionObserver(([entry]) => setReelVisible(entry.isIntersecting), {
-			threshold: 0.6,
+			rootMargin: "-55% 0px -35% 0px",
+			threshold: 0,
 		});
 		obs.observe(section);
 		return () => obs.disconnect();
 	}, []);
 
 	const goTo = useCallback((i: number) => {
-		const el = containerRef.current;
-		if (!el) return;
-		el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+		const track = trackRef.current;
+		if (!track) return;
+		track.scrollTo({ left: i * track.clientWidth, behavior: "smooth" });
 		setActive(i);
 	}, []);
 
+	/* Pointer drag (mouse only — touch uses native swipe) */
+	const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+		if (e.pointerType !== "mouse" || e.button !== 0) return;
+		const track = trackRef.current;
+		if (!track) return;
+		drag.current = { startX: e.clientX, startScroll: track.scrollLeft, moved: false };
+		track.setPointerCapture(e.pointerId);
+		track.classList.add("is-dragging");
+	};
+	const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+		const track = trackRef.current;
+		const d = drag.current;
+		if (!track || !d) return;
+		const dx = e.clientX - d.startX;
+		if (Math.abs(dx) > 6) d.moved = true;
+		track.scrollLeft = d.startScroll - dx;
+	};
+	const endDrag = () => {
+		trackRef.current?.classList.remove("is-dragging");
+		drag.current = null;
+	};
+	const onClickCapture = (e: React.SyntheticEvent) => {
+		if (drag.current?.moved) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
+	};
+
+	const onTrackKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+		const track = trackRef.current;
+		if (!track) return;
+		if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+			e.preventDefault();
+			const dir = e.key === "ArrowRight" ? 1 : -1;
+			track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
+		}
+	};
+
+	const ratio = RATIO_VALUE[category.ratio];
+	const current = category.images[active];
+
 	return (
-		<section ref={sectionRef} className="h-gallery" aria-label={`${label} gallery`}>
-			<div ref={containerRef} className="h-gallery__track" id={id}>
-				{images.map((image, i) => (
-					<figure key={image.src} className="h-gallery__slide ticks">
-						<ImageWithDetail image={image} />
-						<figcaption className="h-gallery__caption">
-							<span className="micro">
-								{label} {String(i + 1).padStart(2, "0")} / {String(images.length).padStart(2, "0")}
-							</span>
-						</figcaption>
-					</figure>
+		<section ref={sectionRef} className="fs-section" aria-label={`${category.name} — full-screen gallery`}>
+			<div className="fs-head" aria-hidden="true">
+				<div className="container fs-head__row">
+					<span className="micro fs-head__index">{category.index}</span>
+					<span className="fs-head__rule" />
+					<span className="micro">{category.name}</span>
+					<span className="fs-head__rule fs-head__rule--flex" />
+					<span className="micro fs-head__project">{projectTitle}</span>
+				</div>
+			</div>
+			<div
+				ref={trackRef}
+				className="fs-track"
+				tabIndex={0}
+				role="region"
+				aria-label={`${category.name} — use arrow keys to move between drawings`}
+				onPointerDown={onPointerDown}
+				onPointerMove={onPointerMove}
+				onPointerUp={endDrag}
+				onPointerCancel={endDrag}
+				onClickCapture={onClickCapture}
+				onKeyDown={onTrackKeyDown}
+			>
+				{category.images.map((image) => (
+					<div key={image.src} className="fs-slide">
+						<div
+							className="fs-frame"
+							style={{
+								width: `min(100% - 8px, calc((100svh - 250px) * ${ratio}))`,
+								aspectRatio: category.ratio.replace("/", " / "),
+							}}
+						>
+							<ImageWithDetail image={image} panelW={26} zoom={3.4} fit="contain" />
+						</div>
+					</div>
 				))}
 			</div>
-			<ReelNavigation images={images} active={active} visible={reelVisible} onSelect={goTo} label={label} />
+			{current && (
+				<div className="fs-caption">
+					<div className="container fs-caption__row">
+						<span className="micro fs-caption__pos">
+							{category.captionStem} {String(active + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
+						</span>
+						<span className="fs-caption__rule" aria-hidden="true" />
+						<span className="micro fs-caption__name">{current.caption}</span>
+						<span className="micro fs-caption__meta">{projectMeta}</span>
+					</div>
+				</div>
+			)}
+			<ReelNavigation
+				images={category.images}
+				active={active}
+				visible={reelVisible}
+				label={category.captionStem}
+				onSelect={goTo}
+			/>
 		</section>
 	);
 }

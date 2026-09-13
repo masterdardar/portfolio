@@ -2,89 +2,138 @@
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
+	border-radius: 0 !important;
 }
 
 html {
 	scroll-behavior: smooth;
-	overflow-x: clip;
+	scroll-padding-top: 64px;
+	-webkit-text-size-adjust: 100%;
 }
 
 body {
-	background: var(--bg);
-	color: var(--fg);
-	font-family: var(--font-body);
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-sans);
 	font-weight: 300;
-	line-height: 1.6;
 	-webkit-font-smoothing: antialiased;
-	overflow-x: clip;
-	cursor: none;
+	-moz-osx-font-smoothing: grayscale;
+	overflow-x: hidden;
+}
+
+::selection {
+	background: var(--ink);
+	color: var(--paper);
+}
+:focus-visible {
+	outline: 1px solid var(--ink);
+	outline-offset: 3px;
 }
 
 h1,
 h2,
 h3 {
-	font-family: var(--font-heading);
+	font-family: var(--font-display);
 	font-weight: 300;
 	letter-spacing: -0.03em;
-	line-height: 0.95;
+	line-height: 0.92;
 }
 
-h1 {
-	font-size: clamp(3rem, 10vw, 8rem);
+img {
+	display: block;
+	max-width: 100%;
 }
-h2 {
-	font-size: clamp(2rem, 5vw, 4rem);
-}
-h3 {
-	font-size: clamp(1.5rem, 3vw, 2.5rem);
-}
+
+/* ---------- type utilities ---------- */
 
 .micro {
 	font-family: var(--font-mono);
 	font-size: 10px;
-	text-transform: uppercase;
+	line-height: 1.2;
 	letter-spacing: 0.15em;
-	color: var(--muted);
+	text-transform: uppercase;
+	font-weight: 400;
+	color: var(--mute);
 }
+@media (min-width: 768px) {
+	.micro {
+		font-size: 10.5px;
+	}
+}
+
+.micro-sm {
+	font-family: var(--font-mono);
+	font-size: 9px;
+	line-height: 1.2;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	font-weight: 400;
+	color: var(--mute);
+}
+
+/* ---------- layout ---------- */
 
 .container {
-	max-width: var(--max-width);
-	margin: 0 auto;
-	padding: 0 var(--space-4);
+	max-width: var(--maxw);
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+@media (min-width: 768px) {
+	.container {
+		padding-inline: var(--gutter-md);
+	}
 }
 
-.rule {
+.grid12 {
+	display: grid;
+	grid-template-columns: repeat(12, 1fr);
+	gap: 24px;
+}
+
+/* ---------- background treatments ---------- */
+
+.dotgrid {
+	background-image: radial-gradient(var(--dot) 0.9px, transparent 1px);
+	background-size: 8px 8px;
+}
+.linegrid {
+	background-image: linear-gradient(to right, var(--rule) 1px, transparent 1px);
+	background-size: 96px 100%;
+}
+
+/* 11px crosshair drawn with two 1px pseudo-element lines */
+.cross {
+	position: absolute;
+	width: 11px;
+	height: 11px;
+	pointer-events: none;
+}
+.cross::before,
+.cross::after {
+	content: "";
+	position: absolute;
+	background: var(--crosshair);
+}
+.cross::before {
+	left: 5px;
+	top: 0;
+	width: 1px;
+	height: 11px;
+}
+.cross::after {
+	top: 5px;
+	left: 0;
 	height: 1px;
-	background: var(--line);
-	border: none;
+	width: 11px;
 }
 
-.dot-grid {
-	background-image: radial-gradient(var(--line) 1px, transparent 1px);
-	background-size: 24px 24px;
-}
+/* ---------- link underline ---------- */
 
-/* Section reveal — IntersectionObserver toggles .is-visible */
-.reveal {
-	opacity: 0;
-	transform: translateY(20px);
-	transition:
-		opacity 800ms ease-out,
-		transform 800ms ease-out;
-}
-
-.reveal.is-visible {
-	opacity: 1;
-	transform: translateY(0);
-}
-
-/* Shared link underline treatment */
 .u-link {
 	position: relative;
 	color: inherit;
 	text-decoration: none;
 }
-
 .u-link::after {
 	content: "";
 	position: absolute;
@@ -97,53 +146,89 @@ h3 {
 	transform-origin: left center;
 	transition: transform 300ms var(--ease);
 }
-
 .u-link:hover::after,
 .u-link:focus-visible::after {
 	transform: scaleX(1);
 }
 
-/* Shared corner ticks for framed images */
-.ticks {
-	position: relative;
+/* ---------- reveal primitives ---------- */
+
+.rv {
+	opacity: 0;
+	transform: translateY(20px);
+	transition:
+		opacity 800ms var(--ease),
+		transform 800ms var(--ease);
+}
+.rv.in {
+	opacity: 1;
+	transform: none;
 }
 
-.ticks::before,
-.ticks::after {
-	content: "";
-	position: absolute;
-	width: 8px;
-	height: 8px;
-	z-index: 3;
-	pointer-events: none;
+.sweep {
+	height: 1px;
+	background: var(--hair);
+	border: none;
+	transform: scaleX(0);
+	transform-origin: left center;
+	transition: transform 1100ms var(--ease);
+}
+.sweep.in {
+	transform: scaleX(1);
 }
 
-.ticks::before {
-	top: 8px;
-	left: 8px;
-	border-top: 1px solid var(--fg);
-	border-left: 1px solid var(--fg);
+/* ---------- side rails ---------- */
+
+.rails {
+	display: none;
 }
 
-.ticks::after {
-	bottom: 8px;
-	right: 8px;
-	border-bottom: 1px solid var(--fg);
-	border-right: 1px solid var(--fg);
+@media (min-width: 768px) {
+	.rails {
+		display: block;
+		position: fixed;
+		inset: 0;
+		max-width: 1440px;
+		margin-inline: auto;
+		pointer-events: none;
+		z-index: 1;
+	}
+	.rails__left,
+	.rails__right {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: var(--hair-soft);
+	}
+	.rails__left {
+		left: 40px;
+	}
+	.rails__right {
+		right: 40px;
+	}
 }
 
-img {
-	display: block;
-	max-width: 100%;
+/* ---------- custom cursor ---------- */
+
+@media (hover: hover) and (pointer: fine) {
+	body,
+	a,
+	button,
+	[role="button"] {
+		cursor: none;
+	}
 }
+
+/* ---------- skip link ---------- */
 
 .skip-link {
 	position: fixed;
 	top: -48px;
-	left: var(--space-4);
+	left: var(--gutter);
 	z-index: 1000;
-	background: var(--fg);
-	color: var(--bg);
+	background: var(--ink);
+	color: var(--paper);
 	font-family: var(--font-mono);
 	font-size: 10px;
 	text-transform: uppercase;
@@ -152,33 +237,30 @@ img {
 	text-decoration: none;
 	transition: top 200ms var(--ease);
 }
-
 .skip-link:focus-visible {
 	top: 8px;
-	outline-color: var(--bg);
+	outline-color: var(--paper);
 }
 
-/* Visible keyboard focus everywhere */
-:focus-visible {
-	outline: 1px solid var(--fg);
-	outline-offset: 2px;
-}
-
-@media (hover: none), (pointer: coarse) {
-	body {
-		cursor: auto;
-	}
-}
+/* ---------- reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-	body {
+	html {
+		scroll-behavior: auto;
+	}
+	body,
+	a,
+	button {
 		cursor: auto;
 	}
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.001ms !important;
-		transition-duration: 0.001ms !important;
-		scroll-behavior: auto !important;
+	.rv,
+	.sweep {
+		opacity: 1 !important;
+		transform: none !important;
+		transition: none !important;
+	}
+	.scrollline,
+	.dash-spin {
+		animation: none;
 	}
 }

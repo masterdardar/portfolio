@@ -4,16 +4,27 @@ import Project02 from "./Project02";
 import Project03 from "./Project03";
 
 function SelectedWork() {
-	const [p1, p2, p3] = projects;
 	return (
-		<section className="selected-work" id="work" aria-label="Selected work">
-			<div className="container selected-work__head">
-				<hr className="rule" />
-				<p className="micro selected-work__kicker">SELECTED WORK — 03 PROJECTS</p>
+		<section className="work" id="work" aria-label="Selected work">
+			<div className="container work__headwrap">
+				<div className="work__head">
+					<span className="micro">SELECTED WORK</span>
+					<span className="work__index">
+						{projects.map((p, i) => (
+							<span key={p.id} className="work__index-item">
+								{i > 0 && <span className="work__sep" aria-hidden="true" />}
+								<a href={`#project-${p.num}`} className="u-link micro">
+									{p.num}
+								</a>
+								{i === projects.length - 1 && <span className="micro">&nbsp;BUILT</span>}
+							</span>
+						))}
+					</span>
+				</div>
 			</div>
-			{p1 && <Project01 project={p1} nextHref="#project-02" nextLabel="Atelier Norte" />}
-			{p2 && <Project02 project={p2} nextHref="#project-03" nextLabel="Pavilhão Rio" />}
-			{p3 && <Project03 project={p3} nextHref="#contact" nextLabel="Contact" />}
+			<Project01 project={projects[0]} />
+			<Project02 project={projects[1]} />
+			<Project03 project={projects[2]} />
 		</section>
 	);
 }

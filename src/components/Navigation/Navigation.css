@@ -1,52 +1,59 @@
 .nav {
 	position: fixed;
+	inset-inline: 0;
 	top: 0;
-	left: 0;
-	right: 0;
-	height: 64px;
-	z-index: 100;
-	border-bottom: 1px solid var(--line);
-	background: transparent;
-	transition: background 300ms var(--ease);
+	z-index: 50;
+	height: var(--nav-h);
+	border-bottom: 1px solid transparent;
+	transition:
+		background 500ms var(--ease),
+		border-color 500ms var(--ease);
+}
+
+@media (min-width: 768px) {
+	.nav {
+		height: var(--nav-h-md);
+	}
 }
 
 .nav.is-scrolled {
-	background: rgba(250, 250, 250, 0.85);
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border-bottom-color: var(--hair);
 }
 
 .nav__inner {
-	height: 64px;
+	height: 100%;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 }
 
 .nav__brand {
-	font-family: var(--font-heading);
-	font-weight: 300;
-	letter-spacing: -0.02em;
-	font-size: 15px;
-	color: var(--fg);
 	text-decoration: none;
 }
 
+.nav__est {
+	color: var(--mute);
+}
+
+@media (max-width: 639px) {
+	.nav__brand {
+		display: none;
+	}
+}
+
 .nav__links {
-	display: flex;
+	display: none;
 	align-items: center;
-	gap: 12px;
+	gap: 32px;
 }
 
-.nav__item {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.nav__sep {
-	color: var(--line-strong);
-	font-size: 10px;
+@media (min-width: 768px) {
+	.nav__links {
+		display: flex;
+	}
 }
 
 .nav__link {
@@ -54,34 +61,52 @@
 }
 
 .nav__burger {
-	display: none;
+	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	align-items: flex-end;
+	justify-content: center;
+	gap: 5px;
+	width: 32px;
+	height: 32px;
 	background: none;
 	border: none;
-	padding: 8px;
+	padding: 0;
+}
+
+@media (min-width: 768px) {
+	.nav__burger {
+		display: none;
+	}
 }
 
 .nav__burger span {
 	display: block;
-	width: 24px;
 	height: 1px;
-	background: var(--fg);
+	background: var(--ink);
 }
+
+.nav__burger span:first-child {
+	width: 24px;
+}
+
+.nav__burger span:last-child {
+	width: 16px;
+}
+
+/* ---------- mobile overlay ---------- */
 
 .nav-overlay {
 	position: fixed;
 	inset: 0;
 	z-index: 200;
-	background: var(--bg);
+	background: var(--paper);
 	display: flex;
-	align-items: center;
-	justify-content: center;
+	flex-direction: column;
 	opacity: 0;
 	visibility: hidden;
 	transition:
-		opacity 400ms var(--ease),
-		visibility 400ms var(--ease);
+		opacity 500ms var(--ease),
+		visibility 500ms var(--ease);
 }
 
 .nav-overlay.is-open {
@@ -89,44 +114,59 @@
 	visibility: visible;
 }
 
-.nav-overlay nav {
+.nav-overlay__strip {
+	height: 56px;
+	flex-shrink: 0;
 	display: flex;
-	flex-direction: column;
-	text-align: center;
-	width: 100%;
-}
-
-.nav-overlay nav a {
-	font-family: var(--font-heading);
-	font-weight: 300;
-	letter-spacing: -0.03em;
-	line-height: 0.95;
-	font-size: clamp(2rem, 5vw, 4rem);
-	color: var(--fg);
-	text-decoration: none;
-	padding: var(--space-3) 0;
-	border-bottom: 1px solid var(--line);
-}
-
-.nav-overlay nav a:first-child {
-	border-top: 1px solid var(--line);
+	align-items: center;
+	justify-content: space-between;
+	padding-inline: var(--gutter);
+	border-bottom: 1px solid var(--hair);
 }
 
 .nav-overlay__close {
-	position: absolute;
-	top: 20px;
-	right: var(--space-4);
 	background: none;
 	border: none;
-	color: var(--muted);
-	padding: 8px;
+	color: var(--mute);
+	padding: 8px 0 8px 8px;
 }
 
-@media (max-width: 767px) {
-	.nav__links {
-		display: none;
-	}
-	.nav__burger {
-		display: flex;
-	}
+.nav-overlay__links {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	overflow-y: auto;
+}
+
+.nav-overlay__links a {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px var(--gutter);
+	border-bottom: 1px solid var(--hair);
+	font-family: var(--font-display);
+	font-weight: 300;
+	letter-spacing: -0.03em;
+	line-height: 1;
+	font-size: 13vw;
+	color: var(--ink);
+	text-decoration: none;
+}
+
+.nav-overlay__links a:first-child {
+	border-top: 1px solid var(--hair);
+}
+
+.nav-overlay__index {
+	color: var(--mute);
+}
+
+.nav-overlay__foot {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px var(--gutter);
+	border-top: 1px solid var(--hair);
 }

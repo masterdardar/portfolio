@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ProjectImage } from "../../data/projects";
 
 type Props = {
@@ -11,66 +11,63 @@ type Props = {
 
 function ReelNavigation({ images, active, visible, label, onSelect }: Props) {
 	const [expanded, setExpanded] = useState(false);
-	const [isMobile, setIsMobile] = useState(false);
-	const listRef = useRef<HTMLDivElement>(null);
+	const [coarse, setCoarse] = useState(
+		() => typeof window !== "undefined" && window.matchMedia("(hover: none)").matches,
+	);
 
 	useEffect(() => {
-		const mq = window.matchMedia("(max-width: 767px)");
-		const sync = () => setIsMobile(mq.matches);
-		sync();
+		const mq = window.matchMedia("(hover: none)");
+		const sync = () => {
+			setCoarse(mq.matches);
+			if (mq.matches) setExpanded(false);
+		};
 		mq.addEventListener("change", sync);
 		return () => mq.removeEventListener("change", sync);
 	}, []);
 
-	const onKeyDown = useCallback(
-		(e: React.KeyboardEvent) => {
-			if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-			e.preventDefault();
-			const next =
-				e.key === "ArrowRight"
-					? Math.min(images.length - 1, active + 1)
-					: Math.max(0, active - 1);
-			onSelect(next);
-		},
-		[active, images.length, onSelect],
-	);
+	/* Collapse when the dock leaves the band */
+	const showExpanded = expanded && visible;
+
+	const onKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+		e.preventDefault();
+		const next =
+			e.key === "ArrowRight" ? Math.min(images.length - 1, active + 1) : Math.max(0, active - 1);
+		onSelect(next);
+	};
 
 	return (
 		<div
-			className={`reel${expanded ? " is-expanded" : ""}${visible ? " is-visible" : ""}${isMobile ? " is-touch" : ""}`}
-			onMouseEnter={isMobile ? undefined : () => setExpanded(true)}
-			onMouseLeave={isMobile ? undefined : () => setExpanded(false)}
-			onFocusCapture={isMobile ? undefined : () => setExpanded(true)}
-			onBlurCapture={isMobile ? undefined : () => setExpanded(false)}
+			className={`reel${showExpanded ? " is-expanded" : ""}${visible ? " is-visible" : ""}`}
+			onPointerEnter={coarse ? undefined : () => setExpanded(true)}
+			onPointerLeave={coarse ? undefined : () => setExpanded(false)}
+			onFocusCapture={coarse ? undefined : () => setExpanded(true)}
+			onBlurCapture={coarse ? undefined : () => setExpanded(false)}
 		>
-			<span className="micro reel__label">
-				{label} — {String(active + 1).padStart(2, "0")} / {String(images.length).padStart(2, "0")}
-			</span>
 			<div
-				ref={listRef}
 				className="reel__items"
-				role="tablist"
+				role="group"
 				aria-label={`${label} reel navigation`}
 				onKeyDown={onKeyDown}
-				onClick={isMobile ? () => setExpanded((v) => !v) : undefined}
+				onClick={coarse ? () => setExpanded((v) => !v) : undefined}
 			>
 				{images.map((image, i) => (
 					<button
 						key={image.src}
 						type="button"
-						role="tab"
-						aria-selected={i === active}
-						aria-label={`Go to ${label} ${i + 1}`}
+						aria-current={i === active}
+						aria-label={`Go to ${label} ${i + 1} of ${images.length}`}
 						tabIndex={visible ? 0 : -1}
 						className={`reel__item${i === active ? " is-active" : ""}`}
 						onClick={(e) => {
 							e.stopPropagation();
 							onSelect(i);
-							if (isMobile) setExpanded(true);
 						}}
 					>
 						<span className="reel__line" aria-hidden="true" />
-						<img className="reel__thumb" src={image.src} alt="" aria-hidden="true" loading="lazy" />
+						{showExpanded && (
+							<img className="reel__thumb" src={image.src} alt="" aria-hidden="true" loading="lazy" draggable={false} />
+						)}
 					</button>
 				))}
 			</div>

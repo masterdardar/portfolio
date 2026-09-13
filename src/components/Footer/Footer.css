@@ -1,29 +1,28 @@
 .footer {
-	padding: var(--space-5) 0;
-}
-
-.footer__rule {
-	margin-bottom: var(--space-4);
-}
-
-.footer .footer__inner {
-	padding-top: 0;
-	padding-bottom: 0;
+	border-top: 1px solid var(--hair);
+	padding-block: 24px;
 }
 
 .footer__row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--space-3);
+	gap: 16px;
 	flex-wrap: wrap;
 }
 
-.footer__right a {
-	text-decoration: none;
-	color: inherit;
+.footer__links {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 }
 
-.footer__sep {
-	color: var(--line-strong);
+.footer__link {
+	text-decoration: none;
+}
+
+.footer__link + .footer__link {
+	border-left: 1px solid var(--hair);
+	padding-left: 10px;
+	margin-left: 10px;
 }

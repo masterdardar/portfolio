@@ -1,105 +1,166 @@
-.model-3d {
-	position: relative;
-	min-height: 100vh;
-	min-height: 100svh;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	padding: var(--space-6) 0;
-	border-top: 1px solid var(--line);
-	border-bottom: 1px solid var(--line);
+.model3d {
+	height: 250svh;
+	background: var(--bone);
+	border-top: 1px solid var(--hair);
+	border-bottom: 1px solid var(--hair);
+	margin-top: 80px;
 }
 
-.model-3d__head {
-	margin-bottom: var(--space-4);
+@media (min-width: 768px) {
+	.model3d {
+		margin-top: 128px;
+	}
 }
 
-.model-3d__canvas {
-	position: relative;
-	height: 70vh;
-	height: 70svh;
-	border-top: 1px solid var(--line);
-	border-bottom: 1px solid var(--line);
-}
-
-.model-3d__canvas canvas {
-	touch-action: pan-y;
-}
-
-.model-3d__loader {
-	position: absolute;
-	inset: 0;
+.model3d__head {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	pointer-events: none;
+	gap: 12px;
+	padding-block: 24px;
 }
 
-.model-3d__loader-line {
-	display: block;
-	width: 160px;
+.model3d__index {
+	color: var(--ink);
+}
+
+.model3d__rule {
+	display: inline-block;
+	width: 40px;
 	height: 1px;
-	background: var(--fg);
-	transform-origin: left center;
-	animation: model-loader 1.5s var(--ease) infinite;
+	background: var(--hair);
+	flex-shrink: 0;
 }
 
-@keyframes model-loader {
-	0% {
-		transform: scaleX(0);
-		transform-origin: left center;
-	}
-	50% {
-		transform: scaleX(1);
-		transform-origin: left center;
-	}
-	51% {
-		transform-origin: right center;
-	}
-	100% {
-		transform: scaleX(0);
-		transform-origin: right center;
+@media (min-width: 768px) {
+	.model3d__rule {
+		width: 64px;
 	}
 }
 
-.model-3d__progress {
-	position: fixed;
-	right: var(--space-4);
+.model3d__stage {
+	position: sticky;
+	top: var(--nav-h);
+	height: calc(100svh - var(--nav-h));
+	overflow: hidden;
+	background: var(--bone);
+}
+
+@media (min-width: 768px) {
+	.model3d__stage {
+		top: var(--nav-h-md);
+		height: calc(100svh - var(--nav-h-md));
+	}
+}
+
+.model3d__canvas {
+	position: absolute;
+	inset: 0;
+}
+
+.model3d__canvas > div {
+	width: 100%;
+	height: 100%;
+}
+
+.model3d__side {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.model3d__side {
+		position: absolute;
+		left: 40px;
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		pointer-events: none;
+	}
+}
+
+.model3d__rail {
+	position: absolute;
+	right: 16px;
 	top: 50%;
 	transform: translateY(-50%);
-	z-index: 90;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 8px;
-	opacity: 0;
-	visibility: hidden;
-	transition:
-		opacity 400ms var(--ease),
-		visibility 400ms var(--ease);
+	pointer-events: none;
 }
 
-.model-3d__progress.is-visible {
-	opacity: 1;
-	visibility: visible;
+@media (min-width: 768px) {
+	.model3d__rail {
+		right: 40px;
+	}
 }
 
-.model-3d__track {
+.model3d__track {
 	display: block;
 	width: 1px;
-	height: 200px;
-	background: var(--line);
+	height: 128px;
+	background: var(--hair);
+	overflow: hidden;
 }
 
-.model-3d__fill {
+@media (min-width: 768px) {
+	.model3d__track {
+		height: 192px;
+	}
+}
+
+.model3d__fill {
 	display: block;
 	width: 1px;
-	height: calc(200px * var(--p, 0));
-	background: var(--fg);
+	height: 100%;
+	background: var(--ink);
+	transform: scaleY(0);
+	transform-origin: bottom center;
 }
 
-.model-3d__caption {
-	display: block;
+.model3d__lock {
+	writing-mode: vertical-rl;
+}
+
+.model3d__cap {
+	position: absolute;
+	bottom: 16px;
+	left: 0;
+	right: 0;
 	text-align: center;
-	margin-top: var(--space-3);
+	pointer-events: none;
+}
+
+.blow--model .blow-cropbox > div {
+	position: absolute;
+	inset: 0;
+}
+
+/* coarse-pointer drawer below the viewport */
+.model3d__drawer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 7;
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 500ms var(--ease);
+}
+
+.model3d__drawer.is-open {
+	grid-template-rows: 1fr;
+}
+
+.model3d__drawer-canvas {
+	position: relative;
+	aspect-ratio: 4 / 3;
+	background: var(--bone);
+}
+
+.model3d__drawer-canvas > div {
+	position: absolute;
+	inset: 0;
 }

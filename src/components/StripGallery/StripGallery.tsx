@@ -45,7 +45,7 @@ function StripGallery({ images, label }: Props) {
 			<div ref={trackRef} className="strip-gallery__track">
 				{images.map((image, i) => (
 					<figure key={image.src} className="strip-gallery__slide ticks">
-						<ImageWithDetail image={image} />
+						<ImageWithDetail image={image} panelW={46} zoom={3.0} fluid />
 						<figcaption className="strip-gallery__caption">
 							<span className="micro">
 								{label} {String(i + 1).padStart(2, "0")} / {String(images.length).padStart(2, "0")}

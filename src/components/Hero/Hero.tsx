@@ -1,52 +1,34 @@
-import Annotation from "../Annotation/Annotation";
+import { site } from "../../data/projects";
 
 function Hero() {
 	return (
-		<section className="hero dot-grid" id="top" aria-label="Introduction">
-			<div className="hero__grid-lines" aria-hidden="true">
-				<span className="hero__hline" style={{ top: "25%" }} />
-				<span className="hero__hline" style={{ top: "50%" }} />
-				<span className="hero__hline" style={{ top: "75%" }} />
-				<span className="hero__vline" style={{ left: "33%" }} />
-				<span className="hero__vline" style={{ left: "66%" }} />
-				{[
-					"25%:33%",
-					"25%:66%",
-					"50%:33%",
-					"50%:66%",
-					"75%:33%",
-					"75%:66%",
-				].map((pos) => {
-					const [top, left] = pos.split(":");
-					return (
-						<span key={pos} className="hero__cross" style={{ top, left }} aria-hidden="true">
-							+
-						</span>
-					);
-				})}
+		<section className="hero" id="top" aria-label="Introduction">
+			<div className="hero__bg dotgrid" aria-hidden="true" />
+			<div className="hero__bg linegrid" aria-hidden="true" />
+			<img className="hero-art" src="/images/hero-axon.svg" alt="" aria-hidden="true" />
+			<span className="cross" style={{ left: 20, top: "22vh" }} aria-hidden="true" />
+			<span className="cross" style={{ left: "33.33%", top: "38vh" }} aria-hidden="true" />
+			<span className="cross cross--md" style={{ right: 40, top: "30vh" }} aria-hidden="true" />
+			<span className="cross cross--md" style={{ left: "66.66%", top: "64vh" }} aria-hidden="true" />
+			<div className="hero__meta">
+				<p className="micro hero__meta-left">
+					SELECTED WORKS <span className="hero__meta-rule" aria-hidden="true" /> 2018 / 2025
+				</p>
+				<p className="micro hero__meta-right">{site.coordinates}</p>
 			</div>
-			<span className="hero__rail hero__rail--left" aria-hidden="true" />
-			<span className="hero__rail hero__rail--right" aria-hidden="true" />
-			<div className="container hero__inner">
-				<p className="micro hero__kicker">PORTFOLIO — 2026</p>
-				<h1 className="hero__name">
-					Jonah Darryl
-					<br />
-					Escoto
+			<div className="scrollline" aria-hidden="true" />
+			<div className="container hero__nameblock">
+				<h1 className="hero-name">
+					<span>Jonah Darryl</span>
+					<span>Escoto</span>
 				</h1>
-				<div className="hero__annotation">
-					<Annotation direction="vertical" length="medium" label="EST. 2012" />
+				<hr className="hero__rule" aria-hidden="true" />
+				<div className="hero__baseline">
+					<p className="micro">
+						INDEPENDENT PRACTICE <span className="hero__baseline-mute">/ PRINCIPAL</span>
+					</p>
+					<p className="micro">{site.discipline}</p>
 				</div>
-				<hr className="rule hero__rule" />
-				<div className="hero__meta">
-					<span className="micro">Principal Architect</span>
-					<span className="hero__meta-sep" aria-hidden="true" />
-					<span className="micro">Architecture — Lisbon</span>
-				</div>
-			</div>
-			<div className="hero__scroll" aria-hidden="true">
-				<span className="micro hero__scroll-label">SCROLL</span>
-				<span className="hero__scroll-line" />
 			</div>
 		</section>
 	);

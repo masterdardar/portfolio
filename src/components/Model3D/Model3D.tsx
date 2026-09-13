@@ -1,140 +1,309 @@
-import { Component, Suspense, useEffect, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import type * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Center, useGLTF, useProgress } from "@react-three/drei";
-import useScrollLock from "../../hooks/useScrollLock";
-import Annotation from "../Annotation/Annotation";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
+import type { Project } from "../../data/projects";
+import { normalizeModel } from "../../lib/modelNormalize";
+import { platePanel } from "../../lib/plateGeometry";
+import { PoiButton } from "../ImageWithDetail/ImageWithDetail";
+import Ticks from "../Ticks/Ticks";
 
-type Props = {
-	src: string;
-	number: string;
-};
+type Bus = { current: Set<() => void> };
 
-function RotatingModel({ src, progress }: { src: string; progress: number }) {
-	const { scene } = useGLTF(src);
+function RotationRig({
+	model,
+	rotationRef,
+	reduced,
+	bus,
+}: {
+	model: THREE.Object3D;
+	rotationRef: { current: number };
+	reduced: boolean;
+	bus: Bus;
+}) {
 	const group = useRef<THREE.Group>(null);
-	useFrame(() => {
-		if (group.current) group.current.rotation.y = progress * Math.PI * 2;
+	const cur = useRef(0);
+	const invalidate = useThree((s) => s.invalidate);
+
+	useEffect(() => {
+		const set = bus.current;
+		set.add(invalidate);
+		invalidate();
+		return () => {
+			set.delete(invalidate);
+		};
+	}, [bus, invalidate]);
+
+	useFrame((state) => {
+		const target = rotationRef.current;
+		cur.current += (target - cur.current) * (reduced ? 1 : 0.12);
+		if (group.current) group.current.rotation.y = cur.current;
+		if (Math.abs(target - cur.current) > 0.0004) state.invalidate();
 	});
+
 	return (
 		<group ref={group}>
-			<primitive object={scene} />
+			<primitive object={model} />
 		</group>
 	);
 }
 
-function FallbackModel({ progress }: { progress: number }) {
-	const ref = useRef<THREE.Mesh>(null);
-	useFrame(() => {
-		if (ref.current) ref.current.rotation.y = progress * Math.PI * 2;
-	});
+function ModelContent({
+	src,
+	rotationRef,
+	reduced,
+	bus,
+	grid = true,
+}: {
+	src: string;
+	rotationRef: { current: number };
+	reduced: boolean;
+	bus: Bus;
+	grid?: boolean;
+}) {
+	const { scene } = useGLTF(src);
+	const model = useMemo(() => normalizeModel(scene), [scene]);
 	return (
-		<mesh ref={ref}>
-			<boxGeometry args={[1.6, 1.6, 1.6]} />
-			<meshStandardMaterial color="#0a0a0a" wireframe />
-		</mesh>
+		<>
+			<ambientLight intensity={0.85} />
+			<directionalLight position={[4, 8, 3]} intensity={0.55} />
+			<directionalLight position={[-6, 3, -4]} intensity={0.25} />
+			{grid && (
+				<gridHelper
+					args={[12, 24, "#0a0a0a", "#0a0a0a"]}
+					material-transparent={true}
+					material-opacity={0.08}
+				/>
+			)}
+			<RotationRig model={model} rotationRef={rotationRef} reduced={reduced} bus={bus} />
+		</>
 	);
 }
 
-class ModelErrorBoundary extends Component<
-	{ children: ReactNode; progress: number; onError: () => void },
-	{ failed: boolean }
-> {
-	state = { failed: false };
-	static getDerivedStateFromError() {
-		return { failed: true };
-	}
-	componentDidCatch() {
-		this.props.onError();
-	}
-	render() {
-		if (this.state.failed) return <FallbackModel progress={this.props.progress} />;
-		return this.props.children;
-	}
-}
-
-function Loader() {
+function DetailCanvas({
+	src,
+	rotationRef,
+	reduced,
+	bus,
+}: {
+	src: string;
+	rotationRef: { current: number };
+	reduced: boolean;
+	bus: Bus;
+}) {
 	return (
-		<div className="model-3d__loader" role="status" aria-label="Loading 3D model">
-			<span className="model-3d__loader-line" />
-		</div>
+		<Canvas
+			frameloop="demand"
+			dpr={[1, 1.5]}
+			gl={{ alpha: true, antialias: true }}
+			camera={{ position: [9, 6.5, 9], fov: 30 }}
+		>
+			<Suspense fallback={null}>
+				<ModelContent src={src} rotationRef={rotationRef} reduced={reduced} bus={bus} grid={false} />
+			</Suspense>
+		</Canvas>
 	);
 }
 
-function Model3D({ src, number }: Props) {
+function Model3D({ project }: { project: Project }) {
 	const sectionRef = useRef<HTMLElement>(null);
-	const { progress, locked } = useScrollLock(sectionRef, { distance: 1500 });
-	const { progress: loadProgress } = useProgress();
-	const [modelFailed, setModelFailed] = useState(false);
-	const [inView, setInView] = useState(false);
-	const [isMobile, setIsMobile] = useState(false);
+	const stageRef = useRef<HTMLDivElement>(null);
+	const degRef = useRef<HTMLSpanElement>(null);
+	const fillRef = useRef<HTMLSpanElement>(null);
+	const lockRef = useRef<HTMLSpanElement>(null);
+	const rotationRef = useRef(0);
+	const bus = useRef<Set<() => void>>(new Set());
+	const [near, setNear] = useState(false);
+	const [blowOpen, setBlowOpen] = useState(false);
+	const [reduced] = useState(
+		() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+	);
+	const [coarse, setCoarse] = useState(
+		() => typeof window !== "undefined" && window.matchMedia("(hover: none)").matches,
+	);
+	const [narrow, setNarrow] = useState(
+		() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+	);
 
-	useEffect(() => {
-		useGLTF.preload(src);
-	}, [src]);
-
+	/* Mount canvas only within ~200px of the viewport */
 	useEffect(() => {
 		const el = sectionRef.current;
 		if (!el) return;
-		const obs = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-			threshold: 0.5,
+		const obs = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), {
+			rootMargin: "200px 0px",
 		});
 		obs.observe(el);
 		return () => obs.disconnect();
 	}, []);
 
 	useEffect(() => {
-		const mq = window.matchMedia("(max-width: 767px)");
-		const sync = () => setIsMobile(mq.matches);
-		sync();
-		mq.addEventListener("change", sync);
-		return () => mq.removeEventListener("change", sync);
+		const hc = window.matchMedia("(hover: none)");
+		const wn = window.matchMedia("(max-width: 767px)");
+		const sync = () => {
+			setCoarse(hc.matches);
+			setNarrow(wn.matches);
+		};
+		hc.addEventListener("change", sync);
+		wn.addEventListener("change", sync);
+		return () => {
+			hc.removeEventListener("change", sync);
+			wn.removeEventListener("change", sync);
+		};
 	}, []);
 
-	const loading = loadProgress < 100 && !modelFailed;
-	const degrees = Math.round(progress * 360);
+	/* Scroll progress → rotation target + direct DOM writes (no React state) */
+	useEffect(() => {
+		const section = sectionRef.current;
+		const stage = stageRef.current;
+		if (!section || !stage) return;
+		let raf = 0;
+		const compute = () => {
+			raf = 0;
+			const rect = section.getBoundingClientRect();
+			const top = rect.top + window.scrollY;
+			const lock = section.offsetHeight - stage.offsetHeight;
+			const p = Math.max(0, Math.min(1, (window.scrollY - top) / Math.max(1, lock)));
+			rotationRef.current = p * Math.PI * 2;
+			if (degRef.current)
+				degRef.current.textContent = `${String(Math.round(p * 360)).padStart(3, "0")}°`;
+			if (fillRef.current) fillRef.current.style.transform = `scaleY(${p})`;
+			if (lockRef.current) lockRef.current.textContent = p >= 1 ? "RELEASED" : "LOCKED";
+			bus.current.forEach((fn) => fn());
+		};
+		const onScroll = () => {
+			if (raf === 0) raf = requestAnimationFrame(compute);
+		};
+		compute();
+		window.addEventListener("scroll", onScroll, { passive: true });
+		window.addEventListener("resize", onScroll);
+		return () => {
+			window.removeEventListener("scroll", onScroll);
+			window.removeEventListener("resize", onScroll);
+			if (raf !== 0) cancelAnimationFrame(raf);
+		};
+	}, []);
+
+	const { model } = project;
+	const panelW = narrow ? 46 : 32;
+	const geom = platePanel(model.focus, panelW);
 
 	return (
 		<section
 			ref={sectionRef}
-			className="model-3d"
-			aria-label={`3D model — project ${number}. Scroll to rotate 360 degrees.`}
+			className="model3d"
+			id={`model-${project.num}`}
+			aria-label={`3D model — ${project.title}. Scroll to rotate 360 degrees.`}
 		>
-			<div className="container model-3d__head">
-				<Annotation direction="horizontal" length="long" label="SCROLL TO ROTATE" />
-			</div>
-			<div className="model-3d__canvas">
-				{loading && <Loader />}
-				<Canvas dpr={isMobile ? [1, 1.5] : [1, 2]} camera={{ position: [0, 0, 5], fov: 45 }}>
-					<ambientLight intensity={0.9} />
-					<directionalLight position={[5, 5, 5]} intensity={0.5} />
-					<Suspense fallback={null}>
-						<Center>
-							<ModelErrorBoundary progress={progress} onError={() => setModelFailed(true)}>
-								<RotatingModel src={src} progress={progress} />
-							</ModelErrorBoundary>
-						</Center>
-					</Suspense>
-				</Canvas>
+			<div className="container model3d__head">
+				<span className="micro model3d__index">MODEL — {project.num}</span>
+				<span className="model3d__rule" aria-hidden="true" />
+				<span className="micro">{model.fileLabel}</span>
 			</div>
 			<div
-				className={`model-3d__progress${inView ? " is-visible" : ""}`}
-				style={{ "--p": progress } as CSSProperties}
-				aria-hidden="true"
+				ref={stageRef}
+				className="model3d__stage"
+				onPointerEnter={coarse ? undefined : () => setBlowOpen(true)}
+				onPointerLeave={coarse ? undefined : () => setBlowOpen(false)}
 			>
-				<span className="micro model-3d__degrees">{degrees}°</span>
-				<span className="model-3d__track">
-					<span className="model-3d__fill" />
-				</span>
+				<div className="model3d__canvas">
+					{near && (
+						<Canvas
+							frameloop="demand"
+							dpr={[1, 2]}
+							gl={{ alpha: true, antialias: true }}
+							camera={{ position: [9, 6.5, 9], fov: 30 }}
+						>
+							<Suspense fallback={null}>
+								<ModelContent src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
+							</Suspense>
+						</Canvas>
+					)}
+				</div>
+				<Ticks size={14} inset={0} />
+				<aside className="model3d__side" aria-label="Model metadata">
+					<p className="micro">FILE — {model.fileLabel}</p>
+					<p className="micro">SOFTWARE — {model.software}</p>
+					<p className="micro">YEAR — {model.year}</p>
+					<p className="micro">PROJECT — {project.title}</p>
+				</aside>
+				<PoiButton
+					x={model.focus.x}
+					y={model.focus.y}
+					label={model.detailLabel}
+					open={blowOpen}
+					onOpen={() => setBlowOpen(true)}
+					onClose={() => setBlowOpen(false)}
+					onToggle={() => setBlowOpen((v) => !v)}
+					coarse={coarse}
+				/>
+				{!coarse && (
+					<div
+						className={`blow blow--model${blowOpen ? " is-open" : ""}`}
+						style={
+							{
+								left: `${geom.left}%`,
+								top: `${geom.top}%`,
+								width: `${panelW}%`,
+								aspectRatio: "1 / 1",
+								transformOrigin: geom.origin,
+							} as CSSProperties
+						}
+						aria-hidden={!blowOpen}
+					>
+						{geom.captionAbove && (
+							<span className="blow-cap">
+								<span className="micro blow-cap__label">{model.detailLabel}</span>
+								<span className="blow-cap__rule" aria-hidden="true" />
+								<span className="micro blow-cap__scale">{model.detailScale}</span>
+							</span>
+						)}
+						<div className="blow-cropbox">
+							<Ticks size={8} inset={4} />
+							{blowOpen && near && (
+								<DetailCanvas src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
+							)}
+						</div>
+						{!geom.captionAbove && (
+							<span className="blow-cap">
+								<span className="micro blow-cap__label">{model.detailLabel}</span>
+								<span className="blow-cap__rule" aria-hidden="true" />
+								<span className="micro blow-cap__scale">{model.detailScale}</span>
+							</span>
+						)}
+					</div>
+				)}
+				<div className="model3d__rail" aria-hidden="true">
+					<span ref={degRef} className="micro model3d__deg">
+						000°
+					</span>
+					<span className="model3d__track">
+						<span ref={fillRef} className="model3d__fill" />
+					</span>
+					<span ref={lockRef} className="micro model3d__lock">
+						LOCKED
+					</span>
+				</div>
+				<p className="micro model3d__cap">SCROLL TO ROTATE — 360°</p>
+				{coarse && (
+					<div className={`model3d__drawer${blowOpen ? " is-open" : ""}`}>
+						<div className="plate__drawer-in">
+							<div className="plate__drawer-body">
+								{blowOpen && near && (
+									<div className="model3d__drawer-canvas">
+										<DetailCanvas src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
+									</div>
+								)}
+								<span className="blow-cap blow-cap--drawer">
+									<span className="micro blow-cap__label">{model.detailLabel}</span>
+									<span className="blow-cap__rule" aria-hidden="true" />
+									<span className="micro blow-cap__scale">{model.detailScale}</span>
+								</span>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
-			<span className="micro model-3d__caption">
-				{locked
-					? `ROTATING — ${degrees}° / 360°`
-					: progress >= 1
-						? "360° — COMPLETE"
-						: "SCROLL TO ROTATE — 360°"}
-			</span>
 		</section>
 	);
 }

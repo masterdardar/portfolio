@@ -80,7 +80,7 @@ function AccordionGallery({ categories }: Props) {
 											{cat.title} {String(j + 1).padStart(2, "0")}
 										</span>
 										<div className="accordion__img" style={{ aspectRatio: cat.aspect }}>
-											<ImageWithDetail image={image} />
+											<ImageWithDetail image={image} panelW={46} zoom={3.0} />
 										</div>
 									</figure>
 								))}

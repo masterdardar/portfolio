@@ -23,8 +23,8 @@ function useCursor() {
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
 		const loop = () => {
-			current.current.x += (target.current.x - current.current.x) * 0.15;
-			current.current.y += (target.current.y - current.current.y) * 0.15;
+			current.current.x += (target.current.x - current.current.x) * 0.22;
+			current.current.y += (target.current.y - current.current.y) * 0.22;
 			setState((s) => ({ ...s, x: current.current.x, y: current.current.y }));
 			raf.current = requestAnimationFrame(loop);
 		};
@@ -32,7 +32,7 @@ function useCursor() {
 
 		const over = (e: MouseEvent) => {
 			const t = e.target as HTMLElement | null;
-			const interactive = t?.closest?.("a, button, [role='button'], [tabindex]");
+			const interactive = t?.closest?.("a, button, [data-cursor], [role='button'], [tabindex]");
 			setState((s) => ({ ...s, hovering: Boolean(interactive) }));
 		};
 		const leave = () => setState((s) => ({ ...s, visible: false }));

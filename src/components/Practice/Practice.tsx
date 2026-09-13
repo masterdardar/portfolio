@@ -1,33 +1,29 @@
 import useInView from "../../hooks/useInView";
-import Annotation from "../Annotation/Annotation";
+import { site } from "../../data/projects";
 import ImageWithDetail from "../ImageWithDetail/ImageWithDetail";
-
-const PORTRAIT = {
-	src: "/images/studio/portrait.svg",
-	caption: "Studio — Lisbon",
-	focusX: 0.52,
-	focusY: 0.32,
-	detailLabel: "DETAIL — STUDIO",
-};
+import Ticks from "../Ticks/Ticks";
 
 function Practice() {
-	const { ref, inView } = useInView<HTMLElement>(0.3);
+	const { ref, inView } = useInView<HTMLElement>(0.25);
 	return (
-		<section ref={ref} className={`practice reveal${inView ? " is-visible" : ""}`} id="practice" aria-label="Practice">
+		<section ref={ref} className="practice" id="practice" aria-label="Practice">
 			<div className="container">
-				<hr className="rule" />
-				<div className="practice__grid">
-					<h2 className="practice__line">A small Lisbon practice building calm, precise houses.</h2>
-					<figure className="practice__figure">
-						<div className="practice__img ticks">
-							<ImageWithDetail image={PORTRAIT} />
-						</div>
-						<div className="practice__side">
-							<Annotation direction="vertical" length="long" label="PRINCIPAL ARCHITECT" />
+				<div className="grid12 practice__grid">
+					<p className={`practice__line rv${inView ? " in" : ""}`}>{site.practiceLine}</p>
+					<figure className={`practice__fig rv${inView ? " in" : ""}`} style={{ transitionDelay: "120ms" }}>
+						<div className="practice__photo">
+							<ImageWithDetail image={site.studioImage} panelW={50} zoom={2.6} fluid />
+							<Ticks size={10} inset={6} color="rgba(255,255,255,0.75)" />
 						</div>
 					</figure>
 				</div>
-				<hr className="rule" />
+				<div className="practice__facts">
+					{site.practiceFacts.map((f) => (
+						<span key={f} className="micro">
+							{f}
+						</span>
+					))}
+				</div>
 			</div>
 		</section>
 	);

@@ -1,71 +1,50 @@
 import useInView from "../../hooks/useInView";
-import Annotation from "../Annotation/Annotation";
+import type { Project } from "../../data/projects";
+import ImageWithDetail from "../ImageWithDetail/ImageWithDetail";
+import Ticks from "../Ticks/Ticks";
 
-export function ProjectHeader({
-	number,
-	title,
-	tags,
-	meta,
-}: {
-	number: string;
-	title: string;
-	tags: string[];
-	meta: string;
-}) {
-	const { ref, inView } = useInView<HTMLElement>(0.3);
+const LAYOUT_NAME: Record<Project["layout"], string> = {
+	fullscreen: "FULL SCREEN REEL",
+	masonry: "MASONRY INDEX",
+};
+
+export function ProjectOpener({ project }: { project: Project }) {
+	const { ref, inView } = useInView<HTMLElement>(0.25);
+	const mirrored = project.mirrored === true;
 	return (
-		<header ref={ref} className={`project-head reveal${inView ? " is-visible" : ""}`}>
-			<span className="micro project-head__number">{number}</span>
-			<h2 className="project-head__title">{title}</h2>
-			<p className="micro project-head__tags">
-				{tags.map((t, i) => (
-					<span key={t}>
-						{i > 0 && (
-							<span className="project-head__divider" aria-hidden="true">
-								{" | "}
+		<header
+			ref={ref}
+			id={`project-${project.num}`}
+			className={`opener container scroll-mt${mirrored ? " is-mirrored" : ""}`}
+			aria-label={`Project ${project.num} — ${project.title}`}
+		>
+			<div className="grid12 opener__grid">
+				<figure className={`opener__plate rv${inView ? " in" : ""}`}>
+					<ImageWithDetail image={project.opener} panelW={34} zoom={3.2} fit="cover" />
+					<Ticks size={12} inset={6} />
+				</figure>
+				<div className="opener__meta">
+					<p className={`micro opener__line rv${inView ? " in" : ""}`} style={{ transitionDelay: "0ms" }}>
+						{project.num}
+						<span className="opener__rule" aria-hidden="true" />
+						<span className="opener__layout">{LAYOUT_NAME[project.layout]}</span>
+					</p>
+					<h3 className={`project-title rv${inView ? " in" : ""}`} style={{ transitionDelay: "80ms" }}>
+						{project.title}
+					</h3>
+					<p className={`micro opener__tags rv${inView ? " in" : ""}`} style={{ transitionDelay: "140ms" }}>
+						{project.tags.map((t) => (
+							<span key={t} className="opener__tag">
+								{t}
 							</span>
-						)}
-						{t}
-					</span>
-				))}
-			</p>
-			<div className="project-head__meta">
-				<Annotation direction="horizontal" length="long" label={meta} />
+						))}
+					</p>
+					<div className={`opener__foot rv${inView ? " in" : ""}`} style={{ transitionDelay: "200ms" }}>
+						<p className="micro opener__meta-line">{project.meta}</p>
+						<p className="opener__brief">{project.brief}</p>
+					</div>
+				</div>
 			</div>
 		</header>
-	);
-}
-
-export function CategoryHeader({
-	index,
-	title,
-	count,
-	unit,
-}: {
-	index: string;
-	title: string;
-	count: number;
-	unit: string;
-}) {
-	return (
-		<div className="cat-head">
-			<span className="micro cat-head__left">
-				{index} — {title}
-			</span>
-			<span className="cat-head__rule" aria-hidden="true" />
-			<span className="micro cat-head__right">
-				{String(count).padStart(2, "0")} {unit}
-			</span>
-		</div>
-	);
-}
-
-export function NextProject({ href, label }: { href: string; label: string }) {
-	return (
-		<div className="container next-project">
-			<a href={href} className="u-link micro next-project__link">
-				<span aria-hidden="true">→&nbsp;&nbsp;</span>Next — {label}
-			</a>
-		</div>
 	);
 }
