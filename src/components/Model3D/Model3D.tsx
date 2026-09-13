@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
@@ -8,23 +8,41 @@ import { normalizeModel } from "../../lib/modelNormalize";
 import { platePanel } from "../../lib/plateGeometry";
 import { PoiButton } from "../ImageWithDetail/ImageWithDetail";
 import Ticks from "../Ticks/Ticks";
+import ModelLoader from "./ModelLoader";
 
 type Bus = { current: Set<() => void> };
+
+/** Catches .glb fetch/parse failures (thrown through Suspense) without retrying. */
+class ModelErrorBoundary extends Component<{ onError: () => void; children: ReactNode }> {
+	state = { failed: false };
+	static getDerivedStateFromError() {
+		return { failed: true };
+	}
+	componentDidCatch() {
+		this.props.onError();
+	}
+	render() {
+		return this.state.failed ? null : this.props.children;
+	}
+}
 
 function RotationRig({
 	model,
 	rotationRef,
 	reduced,
 	bus,
+	onFirstFrame,
 }: {
 	model: THREE.Object3D;
 	rotationRef: { current: number };
 	reduced: boolean;
 	bus: Bus;
+	onFirstFrame?: () => void;
 }) {
 	const fit = useRef<THREE.Group>(null);
 	const spin = useRef<THREE.Group>(null);
 	const cur = useRef(0);
+	const firstFrameFired = useRef(false);
 	const invalidate = useThree((s) => s.invalidate);
 
 	useEffect(() => {
@@ -37,6 +55,10 @@ function RotationRig({
 	}, [bus, invalidate]);
 
 	useFrame((state) => {
+		if (!firstFrameFired.current) {
+			firstFrameFired.current = true;
+			onFirstFrame?.();
+		}
 		/* Fit the massing inside the viewport: largest dimension (with
 		   rotation headroom) targets ~72% of the smaller viewport
 		   dimension, ~65% under 380px. Desktop keeps full size. */
@@ -70,12 +92,14 @@ function ModelContent({
 	reduced,
 	bus,
 	grid = true,
+	onFirstFrame,
 }: {
 	src: string;
 	rotationRef: { current: number };
 	reduced: boolean;
 	bus: Bus;
 	grid?: boolean;
+	onFirstFrame?: () => void;
 }) {
 	const { scene } = useGLTF(src);
 	const model = useMemo(() => normalizeModel(scene), [scene]);
@@ -91,7 +115,7 @@ function ModelContent({
 					material-opacity={0.08}
 				/>
 			)}
-			<RotationRig model={model} rotationRef={rotationRef} reduced={reduced} bus={bus} />
+			<RotationRig model={model} rotationRef={rotationRef} reduced={reduced} bus={bus} onFirstFrame={onFirstFrame} />
 		</>
 	);
 }
@@ -129,6 +153,14 @@ function Model3D({ project }: { project: Project }) {
 	const lockRef = useRef<HTMLSpanElement>(null);
 	const rotationRef = useRef(0);
 	const bus = useRef<Set<() => void>>(new Set());
+	const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+	const loadedOnce = useRef(false);
+	const handleFirstFrame = useCallback(() => {
+		if (loadedOnce.current) return;
+		loadedOnce.current = true;
+		setLoadState("ready");
+	}, []);
+	const handleModelError = useCallback(() => setLoadState("error"), []);
 	const [near, setNear] = useState(false);
 	const [blowOpen, setBlowOpen] = useState(false);
 	const [reduced] = useState(
@@ -227,10 +259,18 @@ function Model3D({ project }: { project: Project }) {
 							gl={{ alpha: true, antialias: true }}
 							camera={{ position: [9, 6.5, 9], fov: 30 }}
 						>
-							<Suspense fallback={null}>
-								<ModelContent src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
-							</Suspense>
+							<ModelErrorBoundary onError={handleModelError}>
+								<Suspense fallback={null}>
+									<ModelContent src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} onFirstFrame={handleFirstFrame} />
+								</Suspense>
+							</ModelErrorBoundary>
 						</Canvas>
+					)}
+					{loadState !== "error" && <ModelLoader done={loadState === "ready"} />}
+					{loadState === "error" && (
+						<p className="micro model3d__unavailable" role="status">
+							MODEL UNAVAILABLE
+						</p>
 					)}
 				</div>
 				<Ticks size={14} inset={0} />
