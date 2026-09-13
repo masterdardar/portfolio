@@ -5,7 +5,7 @@ function Hero() {
 		<section className="hero" id="top" aria-label="Introduction">
 			<div className="hero__bg dotgrid" aria-hidden="true" />
 			<div className="hero__bg linegrid" aria-hidden="true" />
-			<img className="hero-art" src="/images/hero-axon.svg" alt="" aria-hidden="true" />
+			<img className="hero-art" src="/images/hero-axon.png" alt="" aria-hidden="true" />
 			<span className="cross" style={{ left: 20, top: "22vh" }} aria-hidden="true" />
 			<span className="cross" style={{ left: "33.33%", top: "38vh" }} aria-hidden="true" />
 			<span className="cross cross--md" style={{ right: 40, top: "30vh" }} aria-hidden="true" />

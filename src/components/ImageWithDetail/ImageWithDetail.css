@@ -159,36 +159,3 @@
 	height: 1px;
 	background: var(--hair);
 }
-
-/* ---------- below-image drawer (coarse pointers) ---------- */
-
-.plate__drawer {
-	display: grid;
-	grid-template-rows: 0fr;
-	transition: grid-template-rows 500ms var(--ease);
-}
-
-.plate__drawer.is-open {
-	grid-template-rows: 1fr;
-}
-
-.plate__drawer-in {
-	overflow: hidden;
-	min-height: 0;
-}
-
-.plate__drawer-body {
-	border-top: 1px solid var(--hair);
-}
-
-.plate__drawer-crop {
-	width: 100%;
-	background-repeat: no-repeat;
-	background-size: calc(var(--zoom) * 100%);
-	background-position: calc(var(--px) * 100%) calc(var(--py) * 100%);
-	background-color: var(--paper);
-}
-
-.blow-cap--drawer {
-	border-top: 1px solid var(--hair);
-}

@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import type * as THREE from "three";
+import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import type { Project } from "../../data/projects";
@@ -22,7 +22,8 @@ function RotationRig({
 	reduced: boolean;
 	bus: Bus;
 }) {
-	const group = useRef<THREE.Group>(null);
+	const fit = useRef<THREE.Group>(null);
+	const spin = useRef<THREE.Group>(null);
 	const cur = useRef(0);
 	const invalidate = useThree((s) => s.invalidate);
 
@@ -36,15 +37,29 @@ function RotationRig({
 	}, [bus, invalidate]);
 
 	useFrame((state) => {
+		/* Fit the massing inside the viewport: largest dimension (with
+		   rotation headroom) targets ~72% of the smaller viewport
+		   dimension, ~65% under 380px. Desktop keeps full size. */
+		const { size, camera } = state;
+		const persp = camera as THREE.PerspectiveCamera;
+		const dist = camera.position.length();
+		const vH = 2 * dist * Math.tan(THREE.MathUtils.degToRad(persp.fov / 2));
+		const vW = vH * (size.width / Math.max(1, size.height));
+		const frac = size.width < 380 ? 0.65 : 0.72;
+		const s = Math.min(1, (frac * Math.min(vH, vW)) / (4 * 1.35));
+		if (fit.current) fit.current.scale.setScalar(s);
+
 		const target = rotationRef.current;
 		cur.current += (target - cur.current) * (reduced ? 1 : 0.12);
-		if (group.current) group.current.rotation.y = cur.current;
+		if (spin.current) spin.current.rotation.y = cur.current;
 		if (Math.abs(target - cur.current) > 0.0004) state.invalidate();
 	});
 
 	return (
-		<group ref={group}>
-			<primitive object={model} />
+		<group ref={fit}>
+			<group ref={spin}>
+				<primitive object={model} />
+			</group>
 		</group>
 	);
 }
@@ -203,10 +218,8 @@ function Model3D({ project }: { project: Project }) {
 			<div
 				ref={stageRef}
 				className="model3d__stage"
-				onPointerEnter={coarse ? undefined : () => setBlowOpen(true)}
-				onPointerLeave={coarse ? undefined : () => setBlowOpen(false)}
 			>
-				<div className="model3d__canvas">
+				<div className="model3d__canvas" onClick={() => setBlowOpen(false)}>
 					{near && (
 						<Canvas
 							frameloop="demand"
@@ -237,42 +250,40 @@ function Model3D({ project }: { project: Project }) {
 					onToggle={() => setBlowOpen((v) => !v)}
 					coarse={coarse}
 				/>
-				{!coarse && (
-					<div
-						className={`blow blow--model${blowOpen ? " is-open" : ""}`}
-						style={
-							{
-								left: `${geom.left}%`,
-								top: `${geom.top}%`,
-								width: `${panelW}%`,
-								aspectRatio: "1 / 1",
-								transformOrigin: geom.origin,
-							} as CSSProperties
-						}
-						aria-hidden={!blowOpen}
-					>
-						{geom.captionAbove && (
-							<span className="blow-cap">
-								<span className="micro blow-cap__label">{model.detailLabel}</span>
-								<span className="blow-cap__rule" aria-hidden="true" />
-								<span className="micro blow-cap__scale">{model.detailScale}</span>
-							</span>
-						)}
-						<div className="blow-cropbox">
-							<Ticks size={8} inset={4} />
-							{blowOpen && near && (
-								<DetailCanvas src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
-							)}
-						</div>
-						{!geom.captionAbove && (
-							<span className="blow-cap">
-								<span className="micro blow-cap__label">{model.detailLabel}</span>
-								<span className="blow-cap__rule" aria-hidden="true" />
-								<span className="micro blow-cap__scale">{model.detailScale}</span>
-							</span>
+				<div
+					className={`blow blow--model${blowOpen ? " is-open" : ""}`}
+					style={
+						{
+							left: `${geom.left}%`,
+							top: `${geom.top}%`,
+							width: `${panelW}%`,
+							aspectRatio: "1 / 1",
+							transformOrigin: geom.origin,
+						} as CSSProperties
+					}
+					aria-hidden={!blowOpen}
+				>
+					{geom.captionAbove && (
+						<span className="blow-cap">
+							<span className="micro blow-cap__label">{model.detailLabel}</span>
+							<span className="blow-cap__rule" aria-hidden="true" />
+							<span className="micro blow-cap__scale">{model.detailScale}</span>
+						</span>
+					)}
+					<div className="blow-cropbox">
+						<Ticks size={8} inset={4} />
+						{blowOpen && near && (
+							<DetailCanvas src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
 						)}
 					</div>
-				)}
+					{!geom.captionAbove && (
+						<span className="blow-cap">
+							<span className="micro blow-cap__label">{model.detailLabel}</span>
+							<span className="blow-cap__rule" aria-hidden="true" />
+							<span className="micro blow-cap__scale">{model.detailScale}</span>
+						</span>
+					)}
+				</div>
 				<div className="model3d__rail" aria-hidden="true">
 					<span ref={degRef} className="micro model3d__deg">
 						000°
@@ -285,24 +296,6 @@ function Model3D({ project }: { project: Project }) {
 					</span>
 				</div>
 				<p className="micro model3d__cap">SCROLL TO ROTATE — 360°</p>
-				{coarse && (
-					<div className={`model3d__drawer${blowOpen ? " is-open" : ""}`}>
-						<div className="plate__drawer-in">
-							<div className="plate__drawer-body">
-								{blowOpen && near && (
-									<div className="model3d__drawer-canvas">
-										<DetailCanvas src={model.src} rotationRef={rotationRef} reduced={reduced} bus={bus} />
-									</div>
-								)}
-								<span className="blow-cap blow-cap--drawer">
-									<span className="micro blow-cap__label">{model.detailLabel}</span>
-									<span className="blow-cap__rule" aria-hidden="true" />
-									<span className="micro blow-cap__scale">{model.detailScale}</span>
-								</span>
-							</div>
-						</div>
-					</div>
-				)}
 			</div>
 		</section>
 	);

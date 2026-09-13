@@ -39,6 +39,12 @@ export function PoiButton({
 			style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
 			aria-label={`View detail — ${label}`}
 			aria-expanded={open}
+			onPointerEnter={(e) => {
+				if (!coarse && e.pointerType === "mouse") onOpen();
+			}}
+			onPointerLeave={(e) => {
+				if (!coarse && e.pointerType === "mouse") onClose();
+			}}
 			onClick={(e) => {
 				e.stopPropagation();
 				if (coarse) onToggle();
@@ -101,12 +107,11 @@ function ImageWithDetail({ image, panelW, zoom, fluid = false, fit = "cover", cl
 	);
 
 	return (
-		<div
-			className={`plate${open ? " is-open" : ""} ${className}`}
-			onPointerEnter={coarse ? undefined : openIt}
-			onPointerLeave={coarse ? undefined : closeIt}
-		>
-			<div className={`plate__media${fluid ? " is-fluid" : ""}`}>
+		<div className={`plate${open ? " is-open" : ""} ${className}`}>
+			<div
+				className={`plate__media${fluid ? " is-fluid" : ""}`}
+				onClick={coarse && open ? closeIt : undefined}
+			>
 				<img
 					src={image.src}
 					alt={image.alt}
@@ -126,54 +131,29 @@ function ImageWithDetail({ image, panelW, zoom, fluid = false, fit = "cover", cl
 					onToggle={toggle}
 					coarse={coarse}
 				/>
-				{!coarse && (
-					<div
-						className={`blow${open ? " is-open" : ""}`}
-						style={
-							{
-								left: `${geom.left}%`,
-								top: `${geom.top}%`,
-								width: `${panelW}%`,
-								aspectRatio: aspect,
-								transformOrigin: geom.origin,
-							} as CSSProperties
-						}
-						aria-hidden={!open}
-					>
-						{geom.captionAbove && caption}
-						<div className="blow-cropbox">
-							<Ticks size={8} inset={4} />
-							<span className="blow-cross" aria-hidden="true" />
-							{open && (
-								<div
-									className="blow-crop"
-									style={
-										{
-											backgroundImage: `url("${image.src}")`,
-											"--zoom": zoom,
-											"--px": image.focus.x,
-											"--py": image.focus.y,
-										} as CSSProperties
-									}
-									role="img"
-									aria-label={`${image.detailLabel} — magnified detail`}
-								/>
-							)}
-						</div>
-						{!geom.captionAbove && caption}
-					</div>
-				)}
-			</div>
-			{coarse && (
-				<div className={`plate__drawer${open ? " is-open" : ""}`}>
-					<div className="plate__drawer-in">
-						<div className="plate__drawer-body">
+				<div
+					className={`blow${open ? " is-open" : ""}`}
+					style={
+						{
+							left: `${geom.left}%`,
+							top: `${geom.top}%`,
+							width: `${panelW}%`,
+							aspectRatio: aspect,
+							transformOrigin: geom.origin,
+						} as CSSProperties
+					}
+					aria-hidden={!open}
+				>
+					{geom.captionAbove && caption}
+					<div className="blow-cropbox">
+						<Ticks size={8} inset={4} />
+						<span className="blow-cross" aria-hidden="true" />
+						{open && (
 							<div
-								className="plate__drawer-crop"
+								className="blow-crop"
 								style={
 									{
 										backgroundImage: `url("${image.src}")`,
-										aspectRatio: aspect,
 										"--zoom": zoom,
 										"--px": image.focus.x,
 										"--py": image.focus.y,
@@ -182,15 +162,11 @@ function ImageWithDetail({ image, panelW, zoom, fluid = false, fit = "cover", cl
 								role="img"
 								aria-label={`${image.detailLabel} — magnified detail`}
 							/>
-							<span className="blow-cap blow-cap--drawer">
-								<span className="micro blow-cap__label">{image.detailLabel}</span>
-								<span className="blow-cap__rule" aria-hidden="true" />
-								<span className="micro blow-cap__scale">{image.detailScale}</span>
-							</span>
-						</div>
+						)}
 					</div>
+					{!geom.captionAbove && caption}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }

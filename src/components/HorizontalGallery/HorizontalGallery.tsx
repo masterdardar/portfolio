@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Category } from "../../data/projects";
 import ImageWithDetail from "../ImageWithDetail/ImageWithDetail";
+import Ticks from "../Ticks/Ticks";
 import ReelNavigation from "./ReelNavigation";
 
-const RATIO_VALUE: Record<Category["ratio"], number> = {
-	"4/5": 4 / 5,
-	"3/2": 3 / 2,
-	"16/9": 16 / 9,
-	"25/17": 25 / 17,
-};
+const HINT_KEY = "fs-hint-seen";
 
 type Props = {
 	category: Category;
@@ -16,14 +12,45 @@ type Props = {
 	projectMeta: string;
 };
 
+function Chevron({ dir }: { dir: "left" | "right" }) {
+	return (
+		<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+			<path
+				d={dir === "left" ? "M14.5 5 L8 12 L14.5 19" : "M9.5 5 L16 12 L9.5 19"}
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+			/>
+		</svg>
+	);
+}
+
 function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 	const sectionRef = useRef<HTMLElement>(null);
 	const trackRef = useRef<HTMLDivElement>(null);
 	const [active, setActive] = useState(0);
 	const [reelVisible, setReelVisible] = useState(false);
+	const [interacted, setInteracted] = useState(false);
+	const [hint, setHint] = useState(
+		() => typeof window !== "undefined" && window.sessionStorage.getItem(HINT_KEY) !== "1",
+	);
 	const drag = useRef<{ startX: number; startScroll: number; moved: boolean } | null>(null);
 
 	const count = category.images.length;
+
+	const dismissHint = useCallback(() => {
+		setHint(false);
+		try {
+			window.sessionStorage.setItem(HINT_KEY, "1");
+		} catch {
+			/* private mode — hint simply won't persist */
+		}
+	}, []);
+
+	const markInteracted = useCallback(() => {
+		setInteracted(true);
+		dismissHint();
+	}, [dismissHint]);
 
 	/* Active index from scroll position */
 	useEffect(() => {
@@ -36,6 +63,7 @@ function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 			setActive(Math.max(0, Math.min(count - 1, i)));
 		};
 		const onScroll = () => {
+			if (active === 0) markInteracted();
 			if (raf === 0) raf = requestAnimationFrame(sync);
 		};
 		track.addEventListener("scroll", onScroll, { passive: true });
@@ -43,7 +71,7 @@ function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 			track.removeEventListener("scroll", onScroll);
 			if (raf !== 0) cancelAnimationFrame(raf);
 		};
-	}, [count]);
+	}, [count, active, markInteracted]);
 
 	/* Reel visible only while the section sits in the middle band */
 	useEffect(() => {
@@ -57,12 +85,37 @@ function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 		return () => obs.disconnect();
 	}, []);
 
-	const goTo = useCallback((i: number) => {
-		const track = trackRef.current;
-		if (!track) return;
-		track.scrollTo({ left: i * track.clientWidth, behavior: "smooth" });
-		setActive(i);
-	}, []);
+	/* Dismiss the first-slide hint when the section leaves the viewport */
+	useEffect(() => {
+		const section = sectionRef.current;
+		if (!section) return;
+		const obs = new IntersectionObserver(([entry]) => {
+			if (!entry.isIntersecting) dismissHint();
+		});
+		obs.observe(section);
+		return () => obs.disconnect();
+	}, [dismissHint]);
+
+	const goTo = useCallback(
+		(i: number) => {
+			const track = trackRef.current;
+			if (!track) return;
+			markInteracted();
+			track.scrollTo({ left: i * track.clientWidth, behavior: "smooth" });
+			setActive(i);
+		},
+		[markInteracted],
+	);
+
+	const step = useCallback(
+		(dir: 1 | -1) => {
+			const track = trackRef.current;
+			if (!track) return;
+			markInteracted();
+			track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
+		},
+		[markInteracted],
+	);
 
 	/* Pointer drag (mouse only — touch uses native swipe) */
 	const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -78,7 +131,10 @@ function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 		const d = drag.current;
 		if (!track || !d) return;
 		const dx = e.clientX - d.startX;
-		if (Math.abs(dx) > 6) d.moved = true;
+		if (Math.abs(dx) > 6) {
+			d.moved = true;
+			markInteracted();
+		}
 		track.scrollLeft = d.startScroll - dx;
 	};
 	const endDrag = () => {
@@ -97,22 +153,21 @@ function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 		if (!track) return;
 		if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
 			e.preventDefault();
-			const dir = e.key === "ArrowRight" ? 1 : -1;
-			track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
+			step(e.key === "ArrowRight" ? 1 : -1);
 		}
 	};
 
-	const ratio = RATIO_VALUE[category.ratio];
 	const current = category.images[active];
+	const showHint = hint && !interacted && active === 0;
 
 	return (
 		<section ref={sectionRef} className="fs-section" aria-label={`${category.name} — full-screen gallery`}>
-			<div className="fs-head" aria-hidden="true">
+			<div className="fs-head">
 				<div className="container fs-head__row">
 					<span className="micro fs-head__index">{category.index}</span>
-					<span className="fs-head__rule" />
+					<span className="fs-head__rule" aria-hidden="true" />
 					<span className="micro">{category.name}</span>
-					<span className="fs-head__rule fs-head__rule--flex" />
+					<span className="fs-head__rule fs-head__rule--flex" aria-hidden="true" />
 					<span className="micro fs-head__project">{projectTitle}</span>
 				</div>
 			</div>
@@ -131,18 +186,43 @@ function HorizontalGallery({ category, projectTitle, projectMeta }: Props) {
 			>
 				{category.images.map((image) => (
 					<div key={image.src} className="fs-slide">
-						<div
-							className="fs-frame"
-							style={{
-								width: `min(100% - 8px, calc((100svh - 250px) * ${ratio}))`,
-								aspectRatio: category.ratio.replace("/", " / "),
-							}}
-						>
-							<ImageWithDetail image={image} panelW={26} zoom={3.4} fit="contain" />
+						<div className="fs-frame">
+							<ImageWithDetail image={image} panelW={26} zoom={3.4} fit="cover" />
+							<Ticks size={10} inset={6} />
 						</div>
 					</div>
 				))}
 			</div>
+			<span className={`fs-edge fs-edge--left${active > 0 ? " is-on" : ""}`} aria-hidden="true" />
+			<span
+				className={`fs-edge fs-edge--right${active < count - 1 ? " is-on" : ""}`}
+				aria-hidden="true"
+			/>
+			{active > 0 && (
+				<button
+					type="button"
+					className="fs-arrow fs-arrow--left"
+					aria-label={`Previous ${category.captionStem.toLowerCase()}`}
+					onClick={() => step(-1)}
+				>
+					<Chevron dir="left" />
+				</button>
+			)}
+			{active < count - 1 && (
+				<button
+					type="button"
+					className="fs-arrow fs-arrow--right"
+					aria-label={`Next ${category.captionStem.toLowerCase()}`}
+					onClick={() => step(1)}
+				>
+					<Chevron dir="right" />
+				</button>
+			)}
+			{showHint && (
+				<p className="micro fs-hint" aria-hidden="true">
+					DRAG — ARROWS
+				</p>
+			)}
 			{current && (
 				<div className="fs-caption">
 					<div className="container fs-caption__row">

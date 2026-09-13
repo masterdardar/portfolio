@@ -137,30 +137,3 @@
 	position: absolute;
 	inset: 0;
 }
-
-/* coarse-pointer drawer below the viewport */
-.model3d__drawer {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 7;
-	display: grid;
-	grid-template-rows: 0fr;
-	transition: grid-template-rows 500ms var(--ease);
-}
-
-.model3d__drawer.is-open {
-	grid-template-rows: 1fr;
-}
-
-.model3d__drawer-canvas {
-	position: relative;
-	aspect-ratio: 4 / 3;
-	background: var(--bone);
-}
-
-.model3d__drawer-canvas > div {
-	position: absolute;
-	inset: 0;
-}
